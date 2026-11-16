@@ -12,7 +12,10 @@ declare global {
 
 export function LenisSmoothScroll() {
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (
+      typeof window === "undefined" ||
+      window.matchMedia("(pointer: coarse)").matches
+    ) {
       return;
     }
 
@@ -22,7 +25,6 @@ export function LenisSmoothScroll() {
       duration: 1.25,
       smoothWheel: true,
       wheelMultiplier: 1,
-      touchMultiplier: 1.5,
       anchors: true,
       allowNestedScroll: true,
       stopInertiaOnNavigate: true,

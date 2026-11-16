@@ -34,6 +34,9 @@
     color: #000000;
     scroll-behavior: auto;
     font-family: var(--font-host);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
   }
 
   body {
@@ -43,6 +46,23 @@
     font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  @media (pointer: coarse) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
   }
 
   h1,
@@ -124,7 +144,7 @@
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  min-height: clamp(540px, 88vh, 880px);
+  min-height: clamp(460px, 78svh, 860px);
   overflow: hidden;
   background: #14190f;
 }
@@ -190,14 +210,34 @@
   box-shadow: 0 24px 48px rgba(10, 14, 7, 0.45);
 }
 
+.dm-hero__mobile-kicker {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(241, 243, 230, 0.14);
+  border: 1px solid rgba(241, 243, 230, 0.22);
+  color: #e9eade;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 960px) {
+  .dm-hero__mobile-kicker {
+    display: none;
+  }
+}
+
 .dm-title-large {
   width: 100%;
   margin: 0;
   color: #f1f3e6;
   font-family: var(--font-switzer);
   font-weight: 700;
-  font-size: clamp(2.75rem, 8.8vw, 7.75rem);
-  line-height: 0.88;
+  font-size: clamp(2.1rem, 9.2vw, 7.75rem);
+  line-height: 0.9;
   letter-spacing: -0.045em;
   text-align: center;
   text-transform: uppercase;
@@ -468,15 +508,115 @@
   letter-spacing: 0.04em;
 }
 
+.dm-cards__mobile-hint {
+  display: none;
+}
+
 @media (max-width: 959px) {
+  .dm-showcase-band {
+    padding: 3rem 1rem 3.5rem;
+  }
+
+  .dm-manifesto {
+    margin-bottom: 2.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .dm-manifesto__text {
+    font-size: clamp(0.95rem, 4.1vw, 1.2rem);
+    line-height: 1.45;
+  }
+
+  .dm-cards-wrap {
+    overflow: visible;
+    padding: 0.5rem 0 2.25rem;
+    margin: 0 -1rem;
+  }
+
+  .dm-cards {
+    display: block;
+    width: 100%;
+  }
+
   .dm-cards__inner {
-    width: min(72vw, 290px);
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.9rem;
+    width: 100%;
+    aspect-ratio: auto;
+    overflow-x: auto;
+    padding: 0.5rem 1.25rem 1rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
   }
-  .dm-cards.is-inview .dm-card--left {
-    transform: rotate(-10deg) translate3d(-44%, 0, 0);
+
+  .dm-cards__inner::-webkit-scrollbar {
+    display: none;
   }
+
+  .dm-card,
+  .dm-card--left,
+  .dm-card--center,
+  .dm-card--right,
+  .dm-cards.is-inview .dm-card--left,
+  .dm-cards.is-inview .dm-card--center,
   .dm-cards.is-inview .dm-card--right {
-    transform: rotate(10deg) translate3d(44%, 0, 0);
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    flex: 0 0 min(80vw, 290px);
+    width: min(80vw, 290px);
+    height: auto;
+    min-height: 350px;
+    aspect-ratio: auto;
+    transform: none !important;
+    transition: transform 180ms var(--ease-out) !important;
+    scroll-snap-align: center;
+    will-change: auto;
+  }
+
+  .dm-card:active {
+    transform: scale(0.98) !important;
+  }
+
+  .dm-cards__mobile-hint {
+    display: block;
+    margin: 0.35rem 0 0;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4d4c4c;
+  }
+
+  .dm-tasting {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+
+  .dm-tasting__link,
+  .dm-tasting__link.is-inview {
+    width: min(100%, 340px);
+    padding: 0.95rem 1.5rem;
+    clip-path: polygon(100% 1%, 96% 50%, 100% 100%, 0 100%, 4% 50%, 0 0);
+    transform: none;
+  }
+
+  .dm-tasting__link__cta {
+    opacity: 1;
+  }
+}
+
+@media (pointer: coarse) {
+  .dm-hero__media {
+    transform: scale(1.03) !important;
+    will-change: auto;
   }
 }
 

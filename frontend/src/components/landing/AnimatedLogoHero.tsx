@@ -50,7 +50,8 @@ export function AnimatedLogoHero({
   useEffect(() => {
     if (
       typeof window === "undefined" ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      window.matchMedia("(pointer: coarse)").matches
     ) {
       return;
     }
@@ -149,6 +150,10 @@ export function AnimatedLogoHero({
               className="w-full h-full object-contain rounded-[14px]"
             />
           </div>
+
+          <p className="dm-hero__mobile-kicker">
+            150 ML KATORI • PARALLEL KITCHEN
+          </p>
 
           <h1
             id="potly-hero-title"
@@ -272,6 +277,9 @@ export function AnimatedLogoHero({
               </button>
             </div>
           </div>
+          <p className="dm-cards__mobile-hint">
+            Swipe cards → 01 Importer • 02 Timeline • 03 Voice Chef
+          </p>
         </div>
 
         {/* Polygon Clip-Path Ribbon CTAs */}
