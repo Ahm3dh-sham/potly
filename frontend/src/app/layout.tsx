@@ -37,6 +37,10 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap"
           rel="stylesheet"
         />
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/lenis@1.3.27/dist/lenis.css"
+        />
         <script
           src="https://unpkg.com/lenis@1.3.27/dist/lenis.min.js"
           defer

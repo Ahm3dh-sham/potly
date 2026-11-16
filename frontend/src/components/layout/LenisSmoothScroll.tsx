@@ -13,9 +13,14 @@ export function LenisSmoothScroll() {
       return;
     }
 
-    // Initialize Lenis
+    // Initialize Lenis with full configuration
     const lenis = new Lenis({
       autoRaf: true,
+      autoToggle: true,
+      anchors: true,
+      allowNestedScroll: true,
+      naiveDimensions: true,
+      stopInertiaOnNavigate: true,
     });
 
     // Listen for the scroll event and log the event data
