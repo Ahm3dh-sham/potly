@@ -90,33 +90,6 @@ const FAQ_ITEMS: {
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote:
-      "“Cooking a full North Indian thali on a Tuesday night used to take 75 minutes and three cold pans. Potly overlapped the pressure-cooker window with my air-fryer paneer—every bowl hit the table piping hot in 42 minutes.”",
-    author: "Ananya Krishnan",
-    role: "Product Lead & Home Chef, Bengaluru",
-    initials: "AK",
-    accentBg: "#3f6212",
-  },
-  {
-    quote:
-      "“Adapting saved Instagram Reels to Jain and High-Protein in one click is a lifesaver. My parents get their no-onion-garlic dal while I hit 135g daily protein under ₹2,400 a week.”",
-    author: "Rohan Mehta",
-    role: "Design Founder, Mumbai",
-    initials: "RM",
-    accentBg: "#C44D28",
-  },
-  {
-    quote:
-      "“Scanning my grandmother's handwritten masala card into 150ml katori measurements and sending the missing spices straight to Blinkit saved our Sunday family lunch.”",
-    author: "Meera Nair",
-    role: "Culinary Writer, Kochi",
-    initials: "MN",
-    accentBg: "#1E1612",
-  },
-];
-
 const DOWNLOAD_PLATFORMS = [
   {
     id: "mobile-pwa",
@@ -714,59 +687,6 @@ export function EloqwntLandingShell({
                   onLaunchPantry={() => jumpToStudioTab("pantry")}
                 />
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =====================================================================
-            SECTION 5: TESTIMONIALS — One quote per row, with the author's name
-            and role in a separate column. With 3 quotes and avatars. On #f1f3e6.
-           ===================================================================== */}
-        <section
-          id="testimonials"
-          className="bg-[#f1f3e6] pt-[85px] pb-[64px] lg:pt-[128px] lg:pb-[85px] px-6"
-        >
-          <div className="max-w-[1200px] mx-auto space-y-12">
-            <div className="max-w-[680px]">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f6212] mb-3">
-                Home Kitchen Ledger
-              </p>
-              <h2 className="text-4xl sm:text-5xl font-medium tracking-[-0.03em] leading-[1.08] text-[#000000]">
-                What changes when your kitchen runs on one timeline.
-              </h2>
-            </div>
-
-            <div className="divide-y divide-[#d3d4c8] border-y border-[#d3d4c8]">
-              {TESTIMONIALS.map((item) => (
-                <div
-                  key={item.author}
-                  className="py-8 sm:py-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center"
-                >
-                  {/* Quote Column */}
-                  <div className="lg:col-span-8">
-                    <blockquote className="text-xl sm:text-2xl font-normal tracking-[-0.02em] leading-[1.45] text-[#000000]">
-                      {item.quote}
-                    </blockquote>
-                  </div>
-
-                  {/* Separate Author & Role Column with Illustrated Avatar */}
-                  <div className="lg:col-span-4 flex items-center gap-4 lg:justify-start lg:pl-8">
-                    <div
-                      aria-hidden="true"
-                      style={{ backgroundColor: item.accentBg }}
-                      className="h-12 w-12 rounded-full text-[#fcfcfd] font-semibold text-sm flex items-center justify-center shrink-0 border border-[#d3d4c8]"
-                    >
-                      {item.initials}
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold text-[#000000]">
-                        {item.author}
-                      </p>
-                      <p className="text-sm text-[#4d4c4c]">{item.role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
