@@ -30,6 +30,7 @@ import {
   ThaliAndCartFeatureMockup,
 } from "@/components/landing/ShowcaseMockups";
 import { AnimatedLogoHero } from "@/components/landing/AnimatedLogoHero";
+import { PotlyOpeningSplash } from "@/components/landing/PotlyOpeningSplash";
 import { WeeklyMenuBuilder } from "@/components/planner/WeeklyMenuBuilder";
 import type { ActiveCookingTimer, Recipe, UnitSystem } from "@/types/recipe";
 
@@ -164,6 +165,7 @@ export function EloqwntLandingShell({
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cmdQuery, setCmdQuery] = useState("");
   const [cliCopied, setCliCopied] = useState(false);
+  const [splashReplayCount, setSplashReplayCount] = useState(0);
 
   const studioSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -257,6 +259,7 @@ export function EloqwntLandingShell({
       id="top"
       className="min-h-screen bg-[#f1f3e6] text-[#000000] font-display"
     >
+      <PotlyOpeningSplash replayTrigger={splashReplayCount} />
       {/* =====================================================================
           SECTION 1: ANNOUNCEMENT — One line across the top edge. With link.
          ===================================================================== */}
@@ -290,6 +293,7 @@ export function EloqwntLandingShell({
           {/* Brand: Concept 1 Steam Toque & Harvest Bowl Logo */}
           <a
             href="#top"
+            onClick={() => setSplashReplayCount((c) => c + 1)}
             className="flex items-center gap-2.5 shrink-0 focus-visible:outline-none"
           >
             <MiseFoodLogo
