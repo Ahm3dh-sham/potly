@@ -32,7 +32,7 @@
   html {
     background-color: #f1f3e6;
     color: #000000;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     font-family: var(--font-host);
   }
 
@@ -692,13 +692,14 @@
 html.lenis,
 html.lenis body {
   height: auto;
+  scroll-behavior: auto !important;
 }
 
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }
 
-.lenis.lenis-smooth [data-lenis-prevent] {
+.lenis [data-lenis-prevent] {
   overscroll-behavior: contain;
 }
 

@@ -162,10 +162,13 @@ export function EloqwntLandingShell({
       onOpenOcrModal();
       return;
     }
-    studioSectionRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    const el = studioSectionRef.current;
+    if (!el) return;
+    if (window.__potlyLenis) {
+      window.__potlyLenis.scrollTo(el, { offset: -88, duration: 1.2 });
+    } else {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const handleCopyCli = async () => {
@@ -181,9 +184,13 @@ export function EloqwntLandingShell({
   };
 
   const jumpToMenuBuilder = () => {
-    document
-      .getElementById("menu-builder")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = document.getElementById("menu-builder");
+    if (!el) return;
+    if (window.__potlyLenis) {
+      window.__potlyLenis.scrollTo(el, { offset: -88, duration: 1.2 });
+    } else {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const filteredRecipes = recipes.filter(
@@ -1038,7 +1045,13 @@ export function EloqwntLandingShell({
             <button
               type="button"
               aria-label="Scroll to top"
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              onClick={() => {
+                if (window.__potlyLenis) {
+                  window.__potlyLenis.scrollTo(0, { duration: 1.25 });
+                } else {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
               className="btn-press h-12 w-12 rounded-full bg-[#3f6212] text-[#fcfcfd] flex items-center justify-center shrink-0"
             >
               <ArrowUp className="h-5 w-5" />
