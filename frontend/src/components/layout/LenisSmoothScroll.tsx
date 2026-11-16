@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 interface LenisInstance {
+  raf: (time: number) => void;
   on: (event: "scroll", callback: (e: unknown) => void) => void;
   destroy: () => void;
 }
@@ -28,17 +29,23 @@ export function LenisSmoothScroll() {
     }
 
     let lenis: LenisInstance | null = null;
+    let rafId = 0;
     let pollTimer: number | null = null;
 
     const bootLenis = () => {
       if (!window.Lenis || lenis) return false;
-      lenis = new window.Lenis({
-        autoRaf: true,
-      });
-      lenis.on("scroll", (e) => {
-        console.log(e);
-      });
+
+      // Initialize Lenis
+      lenis = new window.Lenis();
       window.__potlyLenis = lenis;
+
+      // Use requestAnimationFrame to continuously update the scroll
+      function raf(time: number) {
+        lenis?.raf(time);
+        rafId = window.requestAnimationFrame(raf);
+      }
+
+      rafId = window.requestAnimationFrame(raf);
       return true;
     };
 
@@ -54,6 +61,9 @@ export function LenisSmoothScroll() {
     return () => {
       if (pollTimer !== null) {
         window.clearInterval(pollTimer);
+      }
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
       }
       lenis?.destroy();
       delete window.__potlyLenis;
