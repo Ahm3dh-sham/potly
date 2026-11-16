@@ -78,54 +78,71 @@ export function AnimatedLogoHero({
           className="potly-hero-scene"
           onPointerMove={handlePointerMove}
           onPointerLeave={() => setTilt({ x: -7, y: 3 })}
-          aria-label="Animated Potly logo floating inside a warm sculptural studio scene"
+          aria-label="Animated Potly logo floating on a dark forest espresso stage"
         >
           <div className="potly-hero-backdrop" aria-hidden="true">
-            <div className="potly-hero-aura potly-hero-aura-terracotta" />
+            <div className="potly-hero-aura potly-hero-aura-olive" />
             <div className="potly-hero-aura potly-hero-aura-saffron" />
-            <div className="potly-hero-aura potly-hero-aura-sage" />
+            <div className="potly-hero-aura potly-hero-aura-terracotta" />
             <svg
               className="potly-hero-arch-svg"
               viewBox="0 0 600 600"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <circle
-                cx="300"
-                cy="300"
-                r="230"
-                stroke="rgba(196, 77, 40, 0.12)"
-                strokeWidth="1"
-                strokeDasharray="4 6"
-              />
-              <circle
-                cx="300"
-                cy="300"
-                r="175"
-                stroke="rgba(30, 22, 18, 0.08)"
+              <rect
+                x="24"
+                y="24"
+                width="552"
+                height="552"
+                rx="22"
+                stroke="rgba(233, 234, 222, 0.09)"
                 strokeWidth="1"
               />
               <circle
                 cx="300"
                 cy="300"
-                r="122"
-                stroke="rgba(223, 155, 53, 0.2)"
+                r="228"
+                stroke="rgba(223, 155, 53, 0.22)"
+                strokeWidth="1"
+                strokeDasharray="4 7"
+              />
+              <circle
+                cx="300"
+                cy="300"
+                r="176"
+                stroke="rgba(169, 202, 120, 0.16)"
+                strokeWidth="1"
+              />
+              <circle
+                cx="300"
+                cy="300"
+                r="126"
+                stroke="rgba(223, 155, 53, 0.26)"
                 strokeWidth="1"
               />
               <path
-                d="M 70 300 H 530"
-                stroke="rgba(30, 22, 18, 0.05)"
+                d="M 60 300 H 540"
+                stroke="rgba(233, 234, 222, 0.06)"
                 strokeWidth="1"
               />
               <path
-                d="M 300 70 V 530"
-                stroke="rgba(30, 22, 18, 0.05)"
+                d="M 300 60 V 540"
+                stroke="rgba(233, 234, 222, 0.06)"
                 strokeWidth="1"
               />
+              <circle cx="300" cy="72" r="2.5" fill="rgba(223, 155, 53, 0.45)" />
+              <circle cx="300" cy="528" r="2.5" fill="rgba(223, 155, 53, 0.45)" />
+              <circle cx="72" cy="300" r="2.5" fill="rgba(223, 155, 53, 0.45)" />
+              <circle cx="528" cy="300" r="2.5" fill="rgba(223, 155, 53, 0.45)" />
             </svg>
             <div className="potly-hero-pedestal-shadow" />
           </div>
           <div className="potly-hero-scene-grain" aria-hidden="true" />
+
+          <span className="potly-hero-stage-tag">
+            POTLY STUDIO — KATORI &amp; TIMELINE ENGINE
+          </span>
 
           <div
             className="potly-hero-orbit potly-hero-orbit-one"
