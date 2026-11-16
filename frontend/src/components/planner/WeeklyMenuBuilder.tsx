@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Check, Copy, RefreshCw, Sparkles } from "lucide-react";
+import { SlidingNumber } from "@/components/core/sliding-number";
 
 /* -------------------------------------------------------------------------- */
 /*  Regional cuisine catalogue                                                 */
@@ -544,11 +545,33 @@ export function WeeklyMenuBuilder() {
               </div>
             </fieldset>
 
-            <fieldset className="space-y-2">
-              <legend className="block text-xs font-semibold text-[#333333] mb-2">
+            <fieldset className="space-y-3">
+              <legend className="block text-xs font-semibold text-[#333333] mb-1">
                 Weekly Grocery Budget (whole household)
               </legend>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col items-start gap-1 rounded-[8px] bg-[#f1f3e6] border border-[#d3d4c8] px-4 py-3.5">
+                <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-[#4d4c4c]">
+                  Current Weekly Budget:
+                </div>
+                <div className="inline-flex items-center gap-1 font-mono text-2xl sm:text-3xl font-bold text-[#3f6212] leading-none">
+                  ₹<SlidingNumber value={budget} />
+                </div>
+                <input
+                  type="range"
+                  aria-label="Weekly Grocery Budget in Rupees"
+                  value={budget}
+                  min={500}
+                  max={10000}
+                  step={50}
+                  onChange={(e) => setBudget(+e.target.value)}
+                  className="mt-2 w-full accent-[#3f6212] cursor-pointer"
+                />
+                <div className="w-full flex items-center justify-between font-mono text-[11px] text-[#4d4c4c] pt-0.5">
+                  <span>₹500</span>
+                  <span>₹10,000</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-0.5">
                 {BUDGETS.map((b) => (
                   <button
                     key={b.label}
