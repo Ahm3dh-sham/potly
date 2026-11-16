@@ -6,11 +6,13 @@ import { TextEffect } from "@/components/core/text-effect";
 interface AnimatedLogoHeroProps {
   onExplore: () => void;
   onImport: () => void;
+  replayTrigger?: number;
 }
 
 export function AnimatedLogoHero({
   onExplore,
   onImport,
+  replayTrigger = 0,
 }: AnimatedLogoHeroProps) {
   const heroMediaRef = useRef<HTMLDivElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
@@ -129,6 +131,7 @@ export function AnimatedLogoHero({
           </p>
 
           <h1
+            key={replayTrigger}
             id="potly-hero-title"
             aria-label="Less juggling, more dinner"
             className="dm-title-large flex flex-col items-center text-center uppercase text-[#f1f3e6]"
@@ -142,7 +145,7 @@ export function AnimatedLogoHero({
                 per="word"
                 as="span"
                 preset="slide"
-                delay={0.1}
+                delay={1.4}
                 className="dm-title-large__word inline-block whitespace-nowrap"
               >
                 LESS
@@ -156,7 +159,7 @@ export function AnimatedLogoHero({
               per="word"
               as="span"
               preset="slide"
-              delay={0.22}
+              delay={1.58}
               className="dm-title-large__line block whitespace-nowrap"
             >
               JUGGLING
@@ -165,7 +168,7 @@ export function AnimatedLogoHero({
               per="word"
               as="span"
               preset="slide"
-              delay={0.34}
+              delay={1.76}
               className="dm-title-large__line block whitespace-nowrap"
             >
               MORE DINNER
@@ -187,14 +190,22 @@ export function AnimatedLogoHero({
               className="w-full h-full object-contain"
             />
           </div>
-          <p className="dm-manifesto__title">
-            THE RHYTHM OF THE INDIAN HOME KITCHEN
-          </p>
           <TextEffect
             per="word"
             as="p"
             preset="slide"
-            delay={0.15}
+            inView={true}
+            delay={0.05}
+            className="dm-manifesto__title"
+          >
+            THE RHYTHM OF THE INDIAN HOME KITCHEN
+          </TextEffect>
+          <TextEffect
+            per="word"
+            as="p"
+            preset="slide"
+            inView={true}
+            delay={0.05}
             className="dm-manifesto__text"
           >
             IN POTLY WE BRING CALM BACK TO EVERYDAY COOKING. FROM SAVED REELS AND HANDWRITTEN CARDS TO 150ML KATORI MEASUREMENTS AND PARALLEL BURNER TIMELINES — SO EVERY DISH LANDS AT THE TABLE PIPING HOT.

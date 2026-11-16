@@ -4,7 +4,6 @@ import React from "react";
 import {
   AnimatePresence,
   motion,
-  useReducedMotion,
   type TargetAndTransition,
   type Transition,
   type Variants,
@@ -25,22 +24,23 @@ export interface TextEffectProps {
   preset?: PresetType;
   delay?: number;
   trigger?: boolean;
+  inView?: boolean;
   onAnimationComplete?: () => void;
   segmentWrapperClassName?: string;
 }
 
 const defaultStaggerTimes: Record<PerType, number> = {
-  char: 0.03,
-  word: 0.08,
-  line: 0.12,
+  char: 0.035,
+  word: 0.1,
+  line: 0.14,
 };
 
 const defaultContainerVariants: Variants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 1 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
+      staggerChildren: 0.1,
     },
   },
   exit: {
@@ -49,8 +49,8 @@ const defaultContainerVariants: Variants = {
 };
 
 const defaultItemTransition: Transition = {
-  duration: 0.45,
-  ease: [0.23, 1, 0.32, 1],
+  duration: 0.62,
+  ease: [0.22, 1, 0.36, 1],
 };
 
 const presetVariants: Record<
@@ -72,22 +72,22 @@ const presetVariants: Record<
   "fade-in-blur": {
     container: defaultContainerVariants,
     item: {
-      hidden: { opacity: 0, y: 20, filter: "blur(12px)" },
+      hidden: { opacity: 0, y: 24, filter: "blur(12px)" },
       visible: {
         opacity: 1,
         y: 0,
         filter: "blur(0px)",
         transition: defaultItemTransition,
       },
-      exit: { opacity: 0, y: 20, filter: "blur(12px)" },
+      exit: { opacity: 0, y: 24, filter: "blur(12px)" },
     },
   },
   scale: {
     container: defaultContainerVariants,
     item: {
-      hidden: { opacity: 0, scale: 0.88 },
+      hidden: { opacity: 0, scale: 0.85 },
       visible: { opacity: 1, scale: 1, transition: defaultItemTransition },
-      exit: { opacity: 0, scale: 0.88 },
+      exit: { opacity: 0, scale: 0.85 },
     },
   },
   fade: {
@@ -101,11 +101,21 @@ const presetVariants: Record<
   slide: {
     container: defaultContainerVariants,
     item: {
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0, transition: defaultItemTransition },
-      exit: { opacity: 0, y: 20 },
+      hidden: { opacity: 0, y: "105%" },
+      visible: {
+        opacity: 1,
+        y: "0%",
+        transition: defaultItemTransition,
+      },
+      exit: { opacity: 0, y: "105%" },
     },
   },
+};
+
+const wrapperPassthroughVariants: Variants = {
+  hidden: {},
+  visible: {},
+  exit: {},
 };
 
 export function TextEffect({
@@ -117,11 +127,10 @@ export function TextEffect({
   preset = "slide",
   delay = 0,
   trigger = true,
+  inView = false,
   onAnimationComplete,
   segmentWrapperClassName = "",
 }: TextEffectProps) {
-  const shouldReduceMotion = useReducedMotion();
-
   const segments =
     per === "line"
       ? children.split("\n")
@@ -134,6 +143,8 @@ export function TextEffect({
   ] as React.ComponentType<{
     initial?: string;
     animate?: string;
+    whileInView?: string;
+    viewport?: { once?: boolean; amount?: number };
     exit?: string;
     variants?: Variants;
     className?: string;
@@ -162,25 +173,24 @@ export function TextEffect({
       ...visibleVariant,
       transition: {
         ...visibleTransition,
-        staggerChildren: shouldReduceMotion
-          ? 0
-          : ((visibleTransition as { staggerChildren?: number } | undefined)
-              ?.staggerChildren ?? defaultStaggerTimes[per]),
-        delayChildren: shouldReduceMotion ? 0 : delay,
+        staggerChildren:
+          (visibleTransition as { staggerChildren?: number } | undefined)
+            ?.staggerChildren ?? defaultStaggerTimes[per],
+        delayChildren: delay,
       },
     },
   };
 
-  const itemVariants: Variants = shouldReduceMotion
-    ? presetVariants.fade.item
-    : (variants?.item ?? selectedVariants.item);
+  const itemVariants: Variants = variants?.item ?? selectedVariants.item;
 
   return (
     <AnimatePresence mode="popLayout">
       {trigger && (
         <MotionTag
           initial="hidden"
-          animate="visible"
+          animate={inView ? undefined : "visible"}
+          whileInView={inView ? "visible" : undefined}
+          viewport={inView ? { once: true, amount: 0.25 } : undefined}
           exit="exit"
           variants={containerVariants}
           className={className || undefined}
@@ -191,17 +201,18 @@ export function TextEffect({
               return <span key={`space-${index}`}>{segment}</span>;
             }
             return (
-              <span
+              <motion.span
                 key={`seg-${index}`}
-                className={`inline-block overflow-hidden align-bottom ${segmentWrapperClassName}`.trim()}
+                variants={wrapperPassthroughVariants}
+                className={`inline-block overflow-hidden align-bottom pb-[0.04em] ${segmentWrapperClassName}`.trim()}
               >
                 <motion.span
                   variants={itemVariants}
-                  className="inline-block whitespace-pre"
+                  className="inline-block whitespace-pre will-change-transform"
                 >
                   {segment}
                 </motion.span>
-              </span>
+              </motion.span>
             );
           })}
         </MotionTag>

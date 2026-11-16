@@ -399,6 +399,7 @@ export function EloqwntLandingShell({
         <AnimatedLogoHero
           onExplore={() => jumpToStudioTab("hub")}
           onImport={onOpenOcrModal}
+          replayTrigger={splashReplayCount}
         />
         {/* =====================================================================
             FIRST SECTION: LIVE STUDIO — The existing interactive workspace
