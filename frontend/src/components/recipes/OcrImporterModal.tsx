@@ -134,7 +134,10 @@ export function OcrImporterModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+        <div
+          data-lenis-prevent
+          className="p-6 space-y-5 max-h-[78vh] overflow-y-auto"
+        >
           {/* Mode Tabs */}
           <div className="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-[#F2F3F5]">
             <button

@@ -1120,7 +1120,10 @@ export function EloqwntLandingShell({
                 ESC
               </button>
             </div>
-            <div className="p-2 max-h-80 overflow-y-auto divide-y divide-[#d3d4c8]">
+            <div
+              data-lenis-prevent
+              className="p-2 max-h-80 overflow-y-auto divide-y divide-[#d3d4c8]"
+            >
               <div className="pb-2">
                 <p className="px-3 py-1 text-[11px] uppercase tracking-wider text-[#4d4c4c] font-semibold">
                   Quick Actions
