@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useState, type PointerEvent } from "react";
-import { ArrowDownRight, ArrowRight, ScanLine } from "lucide-react";
+import { ArrowRight, ScanLine } from "lucide-react";
 import { MiseFoodGlyph } from "@/components/brand/MiseFoodLogo";
 
 interface AnimatedLogoHeroProps {
@@ -80,21 +79,63 @@ export function AnimatedLogoHero({
           className="potly-hero-scene"
           onPointerMove={handlePointerMove}
           onPointerLeave={() => setTilt({ x: -7, y: 3 })}
-          aria-label="Animated Potly logo floating above a fresh kitchen scene"
+          aria-label="Animated Potly logo floating inside a warm sculptural studio scene"
         >
-          <Image
-            src="/potly-hero-kitchen.webp"
-            alt="Fresh tomatoes, herbs, spices and a serving bowl on a sunlit kitchen counter"
-            fill
-            priority
-            sizes="(max-width: 800px) 100vw, 52vw"
-            className="potly-hero-photo"
-          />
-          <div className="potly-hero-photo-wash" />
-          <div className="potly-hero-scene-grain" />
+          <div className="potly-hero-backdrop" aria-hidden="true">
+            <div className="potly-hero-aura potly-hero-aura-terracotta" />
+            <div className="potly-hero-aura potly-hero-aura-saffron" />
+            <div className="potly-hero-aura potly-hero-aura-sage" />
+            <svg
+              className="potly-hero-arch-svg"
+              viewBox="0 0 600 600"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="300"
+                cy="300"
+                r="230"
+                stroke="rgba(196, 77, 40, 0.12)"
+                strokeWidth="1"
+                strokeDasharray="4 6"
+              />
+              <circle
+                cx="300"
+                cy="300"
+                r="175"
+                stroke="rgba(30, 22, 18, 0.08)"
+                strokeWidth="1"
+              />
+              <circle
+                cx="300"
+                cy="300"
+                r="122"
+                stroke="rgba(223, 155, 53, 0.2)"
+                strokeWidth="1"
+              />
+              <path
+                d="M 70 300 H 530"
+                stroke="rgba(30, 22, 18, 0.05)"
+                strokeWidth="1"
+              />
+              <path
+                d="M 300 70 V 530"
+                stroke="rgba(30, 22, 18, 0.05)"
+                strokeWidth="1"
+              />
+            </svg>
+            <div className="potly-hero-pedestal-shadow" />
+          </div>
+          <div className="potly-hero-scene-grain" aria-hidden="true" />
 
-          <div className="potly-hero-orbit potly-hero-orbit-one" aria-hidden="true" />
-          <div className="potly-hero-orbit potly-hero-orbit-two" aria-hidden="true" />
+          <div
+            className="potly-hero-orbit potly-hero-orbit-one"
+            aria-hidden="true"
+          />
+          <div
+            className="potly-hero-orbit potly-hero-orbit-two"
+            aria-hidden="true"
+          />
 
           <div
             className="potly-hero-logo-tilt"
@@ -109,15 +150,9 @@ export function AnimatedLogoHero({
             </div>
           </div>
 
-          <div className="potly-hero-note potly-hero-note-top">
-            <span className="potly-hero-note-icon"><ArrowDownRight size={15} /></span>
-            <span>From saved recipe<br /><strong>to served together</strong></span>
-          </div>
-          <div className="potly-hero-note potly-hero-note-bottom">
-            <span className="potly-hero-live-dot" />
-            <span><strong>42 min</strong><br />everything lands hot</span>
-          </div>
-          <span className="potly-hero-caption">A little more joy in the everyday.</span>
+          <span className="potly-hero-caption">
+            A little more joy in the everyday.
+          </span>
         </div>
       </div>
     </section>
