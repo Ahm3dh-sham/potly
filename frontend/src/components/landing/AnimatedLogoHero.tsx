@@ -1,38 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { TextEffect } from "@/components/core/text-effect";
 
 interface AnimatedLogoHeroProps {
   onExplore: () => void;
   onImport: () => void;
-}
-
-function SplitCharText({
-  text,
-  lineDelayMs = 0,
-}: {
-  text: string;
-  lineDelayMs?: number;
-}) {
-  return (
-    <span className="dm-split-text" aria-hidden="true">
-      {Array.from(text).map((char, idx) => (
-        <span key={idx} className="dm-char-mask">
-          <span
-            className="dm-char"
-            style={
-              {
-                "--char-index": idx,
-                "--line-delay": `${lineDelayMs}ms`,
-              } as React.CSSProperties
-            }
-          >
-            {char === " " ? "\u00A0" : char}
-          </span>
-        </span>
-      ))}
-    </span>
-  );
 }
 
 export function AnimatedLogoHero({
@@ -158,27 +131,45 @@ export function AnimatedLogoHero({
           <h1
             id="potly-hero-title"
             aria-label="Less juggling, more dinner"
-            className="dm-title-large"
+            className="dm-title-large flex flex-col items-center text-center uppercase text-[#f1f3e6]"
           >
             <span className="dm-title-large__line dm-title-large__line--first">
               <span className="dm-title-large__sup dm-title-large__sup--left">
                 <span>150 ML</span>
                 <span>KATORI</span>
               </span>
-              <span className="dm-title-large__word">
-                <SplitCharText text="LESS" lineDelayMs={60} />
-              </span>
+              <TextEffect
+                per="word"
+                as="span"
+                preset="slide"
+                delay={0.1}
+                className="dm-title-large__word inline-block whitespace-nowrap"
+              >
+                LESS
+              </TextEffect>
               <span className="dm-title-large__sup dm-title-large__sup--right">
                 <span>PARALLEL</span>
                 <span>KITCHEN</span>
               </span>
             </span>
-            <span className="dm-title-large__line">
-              <SplitCharText text="JUGGLING" lineDelayMs={180} />
-            </span>
-            <span className="dm-title-large__line">
-              <SplitCharText text="MORE DINNER" lineDelayMs={300} />
-            </span>
+            <TextEffect
+              per="word"
+              as="span"
+              preset="slide"
+              delay={0.22}
+              className="dm-title-large__line block whitespace-nowrap"
+            >
+              JUGGLING
+            </TextEffect>
+            <TextEffect
+              per="word"
+              as="span"
+              preset="slide"
+              delay={0.34}
+              className="dm-title-large__line block whitespace-nowrap"
+            >
+              MORE DINNER
+            </TextEffect>
           </h1>
         </div>
       </section>
@@ -199,11 +190,15 @@ export function AnimatedLogoHero({
           <p className="dm-manifesto__title">
             THE RHYTHM OF THE INDIAN HOME KITCHEN
           </p>
-          <p className="dm-manifesto__text">
-            IN POTLY WE BRING CALM BACK TO EVERYDAY COOKING. FROM SAVED REELS
-            AND HANDWRITTEN CARDS TO 150ML KATORI MEASUREMENTS AND PARALLEL
-            BURNER TIMELINES — SO EVERY DISH LANDS AT THE TABLE PIPING HOT.
-          </p>
+          <TextEffect
+            per="word"
+            as="p"
+            preset="slide"
+            delay={0.15}
+            className="dm-manifesto__text"
+          >
+            IN POTLY WE BRING CALM BACK TO EVERYDAY COOKING. FROM SAVED REELS AND HANDWRITTEN CARDS TO 150ML KATORI MEASUREMENTS AND PARALLEL BURNER TIMELINES — SO EVERY DISH LANDS AT THE TABLE PIPING HOT.
+          </TextEffect>
         </div>
 
         {/* 3-Card Scroll Fan-Out Showcase */}

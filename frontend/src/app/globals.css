@@ -290,35 +290,6 @@
   }
 }
 
-.dm-split-text {
-  display: inline-flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-}
-
-.dm-char-mask {
-  display: inline-flex;
-  overflow: hidden;
-  padding-bottom: 0.04em;
-}
-
-.dm-char {
-  display: inline-block;
-  transform: translateY(115%);
-  animation: dm-char-rise 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-  animation-delay: calc(var(--char-index, 0) * 22ms + var(--line-delay, 0ms));
-  will-change: transform;
-}
-
-@keyframes dm-char-rise {
-  from {
-    transform: translateY(115%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
 /* Editorial Manifesto + 3-Card Scroll Fan-Out + Polygon Ribbon CTAs */
 .dm-showcase-band {
   padding: clamp(4rem, 7vw, 6.5rem) 1.5rem clamp(4.5rem, 8vw, 7rem);
@@ -703,11 +674,6 @@
   .dm-hero__media {
     transform: scale(1.04) !important;
     will-change: auto;
-  }
-
-  .dm-char {
-    animation: none !important;
-    transform: none !important;
   }
 
   .dm-card,
