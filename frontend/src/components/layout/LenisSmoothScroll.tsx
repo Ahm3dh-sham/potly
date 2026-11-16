@@ -1,23 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-
-interface LenisInstance {
-  raf: (time: number) => void;
-  on: (event: "scroll", callback: (e: unknown) => void) => void;
-  destroy: () => void;
-}
-
-type LenisConstructor = new (options?: {
-  autoRaf?: boolean;
-}) => LenisInstance;
-
-declare global {
-  interface Window {
-    Lenis?: LenisConstructor;
-    __potlyLenis?: LenisInstance;
-  }
-}
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 
 export function LenisSmoothScroll() {
   useEffect(() => {
@@ -28,45 +13,29 @@ export function LenisSmoothScroll() {
       return;
     }
 
-    let lenis: LenisInstance | null = null;
+    // Initialize Lenis
+    const lenis = new Lenis({
+      autoRaf: true,
+    });
+
+    // Listen for the scroll event and log the event data
+    lenis.on("scroll", (e) => {
+      console.log(e);
+    });
+
+    // Use requestAnimationFrame to continuously update the scroll
     let rafId = 0;
-    let pollTimer: number | null = null;
-
-    const bootLenis = () => {
-      if (!window.Lenis || lenis) return false;
-
-      // Initialize Lenis
-      lenis = new window.Lenis();
-      window.__potlyLenis = lenis;
-
-      // Use requestAnimationFrame to continuously update the scroll
-      function raf(time: number) {
-        lenis?.raf(time);
-        rafId = window.requestAnimationFrame(raf);
-      }
-
+    function raf(time: number) {
+      lenis.raf(time);
       rafId = window.requestAnimationFrame(raf);
-      return true;
-    };
-
-    if (!bootLenis()) {
-      pollTimer = window.setInterval(() => {
-        if (bootLenis() && pollTimer !== null) {
-          window.clearInterval(pollTimer);
-          pollTimer = null;
-        }
-      }, 60);
     }
+    rafId = window.requestAnimationFrame(raf);
 
     return () => {
-      if (pollTimer !== null) {
-        window.clearInterval(pollTimer);
-      }
       if (rafId) {
         window.cancelAnimationFrame(rafId);
       }
-      lenis?.destroy();
-      delete window.__potlyLenis;
+      lenis.destroy();
     };
   }, []);
 

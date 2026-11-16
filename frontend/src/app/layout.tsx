@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LenisSmoothScroll } from "@/components/layout/LenisSmoothScroll";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,10 +36,6 @@ export default function RootLayout({
         <link
           href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap"
           rel="stylesheet"
-        />
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/lenis@1.3.27/dist/lenis.css"
         />
         <script
           src="https://unpkg.com/lenis@1.3.27/dist/lenis.min.js"
