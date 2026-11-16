@@ -2,7 +2,6 @@
 
 import { useState, type PointerEvent } from "react";
 import { ArrowRight, ScanLine } from "lucide-react";
-import { MiseFoodGlyph } from "@/components/brand/MiseFoodLogo";
 
 interface AnimatedLogoHeroProps {
   onExplore: () => void;
@@ -145,7 +144,12 @@ export function AnimatedLogoHero({
           >
             <div className="potly-hero-logo-float">
               <div className="potly-hero-logo-card">
-                <MiseFoodGlyph size={250} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo-steam-toque.jpg"
+                  alt="potly. Steam Toque and Harvest Bowl Logo"
+                  className="w-full h-full object-contain rounded-[22px]"
+                />
               </div>
             </div>
           </div>
