@@ -197,19 +197,6 @@ export function EloqwntLandingShell({
     }
   };
 
-  const jumpToHowItWorks = (
-    tab: "all" | "studio3d" | "parallel" | "thali" | "voice" = "all"
-  ) => {
-    setHowItWorksTab(tab);
-    const el = document.getElementById("features");
-    if (!el) return;
-    if (window.__potlyLenis) {
-      window.__potlyLenis.scrollTo(el, { offset: -88, duration: 1.2 });
-    } else {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   const filteredRecipes = recipes.filter(
     (r) =>
       r.title.toLowerCase().includes(cmdQuery.toLowerCase()) ||
@@ -301,10 +288,10 @@ export function EloqwntLandingShell({
             />
           </a>
 
-          {/* Primary Navigation Links */}
+          {/* 4 Navigation Links */}
           <nav
             aria-label="Primary"
-            className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-medium text-[#333333]"
+            className="hidden lg:flex items-center gap-5 xl:gap-7 text-sm font-medium text-[#333333]"
           >
             <button
               type="button"
@@ -321,13 +308,6 @@ export function EloqwntLandingShell({
               className="whitespace-nowrap hover:text-[#000000] transition-colors font-semibold text-[#3f6212]"
             >
               7-Day Menu
-            </button>
-            <button
-              type="button"
-              onClick={() => jumpToHowItWorks("all")}
-              className="whitespace-nowrap hover:text-[#000000] transition-colors"
-            >
-              How Potly Works
             </button>
             <button
               type="button"
