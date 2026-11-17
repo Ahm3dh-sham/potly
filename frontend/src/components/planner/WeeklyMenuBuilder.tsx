@@ -409,7 +409,7 @@ export function WeeklyMenuBuilder() {
               Custom 7-Day Menu Builder
             </span>
             <h2 className="text-3xl sm:text-5xl font-medium tracking-[-0.03em] leading-[1.06] text-[#000000]">
-              Plan a week of regional Indian meals in one tap.
+              A week of home food, without the daily guesswork.
             </h2>
             <p className="text-[16px] text-[#333333] leading-[1.6]">
               Pick the regions you love, set your daily nutrition target and

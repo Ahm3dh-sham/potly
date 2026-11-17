@@ -176,21 +176,22 @@ export function AddDishTo3DStudioCard({
         <div className="space-y-4 lg:col-span-5">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-3 py-1 text-xs font-semibold text-[#3f6212]">
             <Box className="h-3.5 w-3.5" />
-            Add Dishes to 3D Studio
+            Add to the Table
           </span>
           <h3 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.12] text-[#1e1612] sm:text-3xl">
-            Drop an Instagram Reel, YouTube link, or dish photo — build its 3D dish &amp; prep above.
+            From a 30-second video to a proper recipe.
           </h3>
           <p className="text-sm leading-relaxed text-[#333333]">
-            Potly extracts normalized 150ml katori ingredients, builds a parallel prep &amp; simmer timeline, and projects the dish onto the interactive <strong>img2threejs</strong> 3D turntable right above.
+            Drop a Reel, YouTube Short, or plate photo. We sort the ingredient
+            list, convert to katoris, and lay out the cooking order.
           </p>
 
           <div className="rounded-[10px] border border-[#d3d4c8] bg-[#f1f3e6] p-4 space-y-2 text-xs text-[#333333]">
-            <p className="font-semibold text-[#1e1612]">What gets added immediately:</p>
+            <p className="font-semibold text-[#1e1612]">Ready as soon as you add it:</p>
             <ul className="space-y-1.5 list-disc pl-4">
-              <li>Interactive 3D procedural vessel &amp; dish model + 3D studio render</li>
-              <li>Normalized Katori / Metric / US ingredient list with instant swaps</li>
-              <li>Parallel Prep, Passive Wait, Active Cook &amp; Plating schedule</li>
+              <li>Plated dish preview on the stage above</li>
+              <li>Katori, Metric, and US measures with instant ingredient swaps</li>
+              <li>Step-by-step prep, simmer, and plating schedule</li>
             </ul>
           </div>
         </div>

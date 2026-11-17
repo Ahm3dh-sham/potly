@@ -476,7 +476,7 @@ export function RecipeRemix3DScrollStage({
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3f6212] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#fcfcfd]">
             <Flame className="h-3 w-3" />
-            3D Dish, Remix &amp; Prep Studio
+            Dish Archive
           </span>
           <button
             type="button"
@@ -801,7 +801,7 @@ export function RecipeRemix3DScrollStage({
           <div className="mb-2 flex items-center justify-between px-1">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#3f6212]">
               <Sparkles className="h-3 w-3" />
-              Lower Track • 1-Click Remix Layer
+              Adapt the Recipe
             </span>
             {selectedRecipe.parent_recipe_id && (
               <button
@@ -875,27 +875,26 @@ export function RecipeRemix3DScrollStage({
         {/* Vogue Business / Archrival-Inspired Editorial Pill-Highlighted Story Strip */}
         <div className="relative z-20 mx-auto mt-7 max-w-3xl border-t border-[#d3d4c8] pt-6 text-center">
           <p className="text-base leading-[1.75] tracking-[-0.015em] text-[#1e1612] sm:text-xl sm:leading-[1.8]">
-            Plating{" "}
             <span className="inline-block rounded-md bg-[#d9f99d] px-2 py-0.5 font-semibold text-[#1a2e05]">
               {shortDishName}
             </span>{" "}
-            with{" "}
+            —{" "}
             <span className="inline-block rounded-md bg-[#fde68a] px-2 py-0.5 font-semibold text-[#451a03]">
-              {selectedRecipe.ingredients.length} ingredients
-            </span>{" "}
-            measured in{" "}
+              {selectedRecipe.ingredients.length} pantry items
+            </span>
+            ,{" "}
             <span className="inline-block rounded-md bg-[#fed7aa] px-2 py-0.5 font-semibold text-[#431407]">
               {UNIT_SYSTEM_LABEL[unitSystem]}
-            </span>{" "}
-            delivers{" "}
+            </span>
+            ,{" "}
             <span className="inline-block rounded-md bg-[#3f6212] px-2 py-0.5 font-semibold text-[#fcfcfd]">
               {activeProtein}g protein
             </span>{" "}
-            ({activeCalories} kcal) per serving — ready in{" "}
+            per plate ({activeCalories} kcal),{" "}
             <span className="font-mono font-semibold text-[#3f6212]">
               {totalMinutes} min
-            </span>
-            .
+            </span>{" "}
+            start to finish.
           </p>
 
           {/* Bottom Dish Scrubber Pills + Direct Cook CTA */}

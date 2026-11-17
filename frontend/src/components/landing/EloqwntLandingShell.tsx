@@ -434,14 +434,14 @@ export function EloqwntLandingShell({
             <div className="mb-8 flex flex-col gap-2 border-b border-[#d3d4c8] pb-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#3f6212]">
-                  Potly Kitchen Studio
+                  The Kitchen Table
                 </p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#1e1612] sm:text-4xl">
-                  Your kitchen, in rhythm.
+                  Measured to the katori. Timed to the minute.
                 </h2>
               </div>
               <p className="max-w-md text-sm leading-relaxed text-[#4d4c4c]">
-                Explore recipes, plan a week, or let Potly guide the next step.
+                Seven regional staples, or anything you bring from a Reel or cookbook.
               </p>
             </div>
 
@@ -590,8 +590,7 @@ export function EloqwntLandingShell({
                   How Potly Works
                 </p>
                 <h2 className="text-4xl sm:text-5xl font-medium tracking-[-0.03em] leading-[1.08] text-[#000000]">
-                  Four kitchen engines that bridge saving a recipe and serving it
-                  hot.
+                  Built around how Indian kitchens actually run.
                 </h2>
               </div>
 
@@ -636,18 +635,16 @@ export function EloqwntLandingShell({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               <div className="lg:col-span-5 space-y-5">
                 <span className="inline-block px-3 py-1 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-xs font-semibold text-[#3f6212]">
-                  01 • Reel, YT &amp; Photo → 3D Dish Studio
+                  01 • Any Link or Photo
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-medium tracking-[-0.03em] leading-[1.12] text-[#000000]">
-                  Turn any Reel, YouTube Short, or dish photo into a 3D dish &amp; prep timeline.
+                  Any link or photo, rewritten in plain kitchen measures.
                 </h3>
                 <p className="text-[16px] text-[#333333] leading-[1.6]">
-                  Drop an Instagram Reel, YouTube video, or dish photo and Potly
-                  pulls the dish visual, builds an orbitable{" "}
-                  <strong>img2threejs</strong> 3D model with a{" "}
-                  <code>MorphingDialog</code> lightbox, converts ingredients into
-                  150ml katoris, and remixes to High-Protein, Jain, Vegan, or
-                  Air-Fryer in one click.
+                  Drop an Instagram Reel, YouTube Short, or dish photo. We sort
+                  the ingredient list into 150ml katoris and grams, lay out the
+                  cooking order, and let you flip between High-Protein, Jain,
+                  Vegan, or Air-Fryer in one click.
                 </p>
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <button
@@ -691,7 +688,7 @@ export function EloqwntLandingShell({
                   02 • Multi-Dish Parallel Timing
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-medium tracking-[-0.03em] leading-[1.12] text-[#000000]">
-                  Weave 2 to 4 dishes into one timeline so nothing waits cold.
+                  Two pans, one clock — everything finishes hot.
                 </h3>
                 <p className="text-[16px] text-[#333333] leading-[1.6]">
                   Cooking Dal Tadka, Paneer Tikka, and Jeera Rice one after
@@ -728,15 +725,14 @@ export function EloqwntLandingShell({
                   03 • Thali Macros &amp; 10-Min Carts
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-medium tracking-[-0.03em] leading-[1.12] text-[#000000]">
-                  Balance 4-part Indian thalis and export your aisle cart in one
-                  tap.
+                  Seven days of regional meals, one clean grocery list.
                 </h3>
                 <p className="text-[16px] text-[#333333] leading-[1.6]">
-                  Plan a full 7-day menu around composite Indian thalis
+                  Plan a full 7-day menu around balanced Indian thalis
                   (Rice/Roti + Dal + Sabji + Curd) or quick single-bowl meals
-                  with a live <code>SlidingNumber</code> grocery budget slider.
-                  Potly merges duplicate ingredients across the week and links
-                  every item to Swiggy Instamart, Blinkit, Zepto, and BigBasket.
+                  with a live weekly budget slider. Potly combines duplicate
+                  groceries across the week and opens your cart in Swiggy
+                  Instamart, Blinkit, Zepto, or BigBasket.
                 </p>
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <button
@@ -779,7 +775,7 @@ export function EloqwntLandingShell({
                   04 • Hands-Free Voice Sous Chef
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-medium tracking-[-0.03em] leading-[1.12] text-[#000000]">
-                  Ask quantities, start named timers, or swap ingredients hands-free.
+                  Hands-free voice prompts that stay out of your way.
                 </h3>
                 <p className="text-[16px] text-[#333333] leading-[1.6]">
                   With Screen Wake Lock active while your hands are busy with
