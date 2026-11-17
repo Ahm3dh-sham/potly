@@ -37,6 +37,35 @@ function ensureExternalApi(): void {
   }
 }
 
+export type DishArchetype =
+  | "kadhai"
+  | "thali"
+  | "dosa"
+  | "bowl"
+  | "uruli"
+  | "platter"
+  | "handi";
+
+export const RECIPE_ARCHETYPE_BY_ID: Record<string, DishArchetype> = {
+  "11111111-1111-4111-8111-111111111101": "kadhai",
+  "11111111-1111-4111-8111-111111111102": "thali",
+  "11111111-1111-4111-8111-111111111103": "dosa",
+  "11111111-1111-4111-8111-111111111104": "bowl",
+  "11111111-1111-4111-8111-111111111105": "uruli",
+  "11111111-1111-4111-8111-111111111106": "platter",
+  "11111111-1111-4111-8111-111111111107": "handi",
+};
+
+export const ARCHETYPE_3D_IMAGE: Record<DishArchetype, string> = {
+  kadhai: "/recipes/paneer-tikka-3d.jpg",
+  thali: "/recipes/dal-palak-thali-3d.jpg",
+  dosa: "/recipes/mysore-masala-dosa-3d.jpg",
+  bowl: "/recipes/tandoori-chicken-bowl-3d.jpg",
+  uruli: "/recipes/malabar-prawn-appam-3d.jpg",
+  platter: "/recipes/mumbai-pav-bhaji-3d.jpg",
+  handi: "/recipes/kolkata-kosha-pulao-3d.jpg",
+};
+
 export const RECIPE_3D_IMAGE_BY_ID: Record<string, string> = {
   "11111111-1111-4111-8111-111111111101": "/recipes/paneer-tikka-3d.jpg",
   "11111111-1111-4111-8111-111111111102": "/recipes/dal-palak-thali-3d.jpg",
@@ -47,6 +76,35 @@ export const RECIPE_3D_IMAGE_BY_ID: Record<string, string> = {
   "11111111-1111-4111-8111-111111111107": "/recipes/kolkata-kosha-pulao-3d.jpg",
 };
 
+export function getRecipeArchetype(recipe: Recipe): DishArchetype {
+  const byId = RECIPE_ARCHETYPE_BY_ID[recipe.id];
+  if (byId) return byId;
+  if (recipe.parent_recipe_id) {
+    const byParent = RECIPE_ARCHETYPE_BY_ID[recipe.parent_recipe_id];
+    if (byParent) return byParent;
+  }
+  const text = `${recipe.title} ${recipe.cuisine} ${(recipe.tags ?? []).join(" ")}`.toLowerCase();
+  if (/(dosa|idli|sambar|tiffin|south|uttapam|vada)/i.test(text)) {
+    return "dosa";
+  }
+  if (/(prawn|fish|kerala|malabar|appam|coastal|chemmeen|seafood)/i.test(text)) {
+    return "uruli";
+  }
+  if (/(pav|bhaji|mumbai|west|street|chole|chaat)/i.test(text)) {
+    return "platter";
+  }
+  if (/(bengali|east|kolkata|pulao|kosha|soya|biryani|handi)/i.test(text)) {
+    return "handi";
+  }
+  if (/(chicken|tikka|tandoori|quinoa|air-fryer|bowl|salad)/i.test(text)) {
+    return "bowl";
+  }
+  if (/(dal|palak|thali|rice|moong|khichdi|spinach|toor)/i.test(text)) {
+    return "thali";
+  }
+  return "kadhai";
+}
+
 export function getRecipe3DImage(recipe: Recipe): string {
   if (recipe.hero_image_url) return recipe.hero_image_url;
   const byId = RECIPE_3D_IMAGE_BY_ID[recipe.id];
@@ -55,26 +113,7 @@ export function getRecipe3DImage(recipe: Recipe): string {
     const byParent = RECIPE_3D_IMAGE_BY_ID[recipe.parent_recipe_id];
     if (byParent) return byParent;
   }
-  const text = `${recipe.title} ${recipe.cuisine}`.toLowerCase();
-  if (/(dosa|idli|sambar|tiffin|south)/i.test(text)) {
-    return "/recipes/mysore-masala-dosa-3d.jpg";
-  }
-  if (/(prawn|fish|kerala|malabar|appam|coastal)/i.test(text)) {
-    return "/recipes/malabar-prawn-appam-3d.jpg";
-  }
-  if (/(pav|bhaji|mumbai|west|street|vada)/i.test(text)) {
-    return "/recipes/mumbai-pav-bhaji-3d.jpg";
-  }
-  if (/(bengali|east|kolkata|pulao|kosha|soya)/i.test(text)) {
-    return "/recipes/kolkata-kosha-pulao-3d.jpg";
-  }
-  if (/(chicken|tikka|tandoori|quinoa|air-fryer)/i.test(text)) {
-    return "/recipes/tandoori-chicken-bowl-3d.jpg";
-  }
-  if (/(dal|palak|thali|rice|moong|spinach)/i.test(text)) {
-    return "/recipes/dal-palak-thali-3d.jpg";
-  }
-  return "/recipes/paneer-tikka-3d.jpg";
+  return ARCHETYPE_3D_IMAGE[getRecipeArchetype(recipe)];
 }
 
 export const FALLBACK_RECIPES: Recipe[] = [
@@ -1518,7 +1557,8 @@ export async function remixRecipeWithAI(
   recipeId: string,
   remixMode: RemixMode,
   customInstruction?: string,
-  targetServings?: number
+  targetServings?: number,
+  sourceRecipe?: Recipe
 ): Promise<Recipe> {
   if (shouldTryExternalApi()) {
     try {
@@ -1540,7 +1580,9 @@ export async function remixRecipeWithAI(
   }
 
   const base =
-    FALLBACK_RECIPES.find((r) => r.id === recipeId) ?? FALLBACK_RECIPES[0]!;
+    sourceRecipe ??
+    FALLBACK_RECIPES.find((r) => r.id === recipeId) ??
+    FALLBACK_RECIPES[0]!;
   const servings = targetServings ?? base.servings;
   const suffixMap: Record<RemixMode, string> = {
     high_protein: "(+40% High-Protein)",

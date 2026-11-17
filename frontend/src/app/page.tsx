@@ -1,23 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Clock,
-  GitFork,
-  Loader2,
-  Mic,
-  Search,
-  Sparkles,
-  Users,
-} from "lucide-react";
 import { type ActiveTab } from "@/components/layout/AppShell";
 import { EloqwntLandingShell } from "@/components/landing/EloqwntLandingShell";
 import { HandsFreeCookView } from "@/components/cooking/HandsFreeCookView";
 import { PantryRescueView } from "@/components/pantry/PantryRescueView";
-import { IngredientList } from "@/components/recipes/IngredientList";
+import { AddDishTo3DStudioCard } from "@/components/recipes/AddDishTo3DStudioCard";
 import { OcrImporterModal } from "@/components/recipes/OcrImporterModal";
-import { ParallelTimeline } from "@/components/recipes/ParallelTimeline";
-import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { RecipeRemix3DScrollStage } from "@/components/recipes/RecipeRemix3DScrollStage";
 import { SocialCookbooksView } from "@/components/social/SocialCookbooksView";
 import { KineticPrepTimeline } from "@/components/timeline/KineticPrepTimeline";
@@ -45,7 +34,6 @@ export default function MiseFoodWorkspacePage() {
   const [currentServings, setCurrentServings] = useState<number>(
     FALLBACK_RECIPES[0]?.servings ?? 3
   );
-  const [searchQuery, setSearchQuery] = useState("");
   const [ocrModalOpen, setOcrModalOpen] = useState(false);
   const [remixNote, setRemixNote] = useState("");
   const [isForking, setIsForking] = useState(false);
@@ -74,11 +62,6 @@ export default function MiseFoodWorkspacePage() {
   useEffect(() => {
     void reloadRecipes();
   }, []);
-
-  const handleSemanticSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await reloadRecipes(searchQuery);
-  };
 
   const handleSelectRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
@@ -112,11 +95,14 @@ export default function MiseFoodWorkspacePage() {
     setActiveRemixLoading(mode);
     try {
       const targetRecipeId = selectedRecipe.parent_recipe_id ?? selectedRecipe.id;
+      const sourceBase =
+        recipes.find((r) => r.id === targetRecipeId) ?? selectedRecipe;
       const remixed = await remixRecipeWithAI(
         targetRecipeId,
         mode,
         undefined,
-        currentServings
+        currentServings,
+        sourceBase
       );
       setRecipes((prev) => [remixed, ...prev]);
       setSelectedRecipe(remixed);
@@ -162,13 +148,12 @@ export default function MiseFoodWorkspacePage() {
     }
   };
 
-  const scaleFactor =
-    selectedRecipe.servings > 0
-      ? currentServings / selectedRecipe.servings
-      : 1;
-  const scaledTotalCost = Math.round(
-    selectedRecipe.estimated_total_cost_inr * scaleFactor
-  );
+  const focusAddedDishInStudio = (newRecipe: Recipe) => {
+    setRecipes((prev) => [newRecipe, ...prev]);
+    setSelectedRecipe(newRecipe);
+    setCurrentServings(newRecipe.servings);
+    setActiveTab("hub");
+  };
 
   return (
     <EloqwntLandingShell
@@ -188,13 +173,23 @@ export default function MiseFoodWorkspacePage() {
       }}
     >
       {activeTab === "hub" && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <RecipeRemix3DScrollStage
             recipes={recipes}
             selectedRecipe={selectedRecipe}
             currentServings={currentServings}
             unitSystem={unitSystem}
             activeRemixLoading={activeRemixLoading}
+            remixNote={remixNote}
+            isForking={isForking}
+            onChangeRemixNote={setRemixNote}
+            onForkRemix={() => void handleForkRemix()}
+            onChangeServings={setCurrentServings}
+            onChangeUnitSystem={setUnitSystem}
+            onReplaceIngredient={handleReplaceIngredient}
+            onStartStepTimer={(label, seconds, stepNum) => {
+              startTimer(label, seconds, stepNum);
+            }}
             onSelectRecipe={handleSelectRecipe}
             onTriggerRemix={(mode) => {
               void handleOneClickAiRemix(mode);
@@ -205,189 +200,12 @@ export default function MiseFoodWorkspacePage() {
             }}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Recipe Library & Search */}
-          <div className="lg:col-span-4 space-y-4">
-            <form
-              onSubmit={(e) => void handleSemanticSearch(e)}
-              className="flex items-center gap-2"
-            >
-              <label htmlFor="recipe-search" className="sr-only">
-                Search dishes, ingredients, or mood
-              </label>
-              <div className="relative flex-1">
-                <Search className="h-4 w-4 text-[#4d4c4c] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  id="recipe-search"
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search dishes, ingredients, or mood..."
-                  className="w-full rounded-full bg-[#e9eade] border border-[#d3d4c8] pl-10 pr-4 py-2.5 text-xs text-[#000000] placeholder:text-[#4d4c4c] focus:outline-none focus:border-[#3f6212]"
-                />
-              </div>
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery("");
-                    void reloadRecipes("");
-                  }}
-                  className="btn-press px-3 py-2 rounded-full bg-[#e9eade] border border-[#d3d4c8] text-[#333333] text-xs font-medium"
-                >
-                  Clear
-                </button>
-              )}
-            </form>
-
-            <div className="space-y-2.5">
-              {recipes.map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  isSelected={recipe.id === selectedRecipe.id}
-                  onSelect={handleSelectRecipe}
-                  onStartCooking={(r) => {
-                    handleSelectRecipe(r);
-                    setActiveTab("sous-chef");
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column: Recipe Detail, 1-Click Adaptations, Ingredients & Timeline */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="rounded-[8px] bg-[#e9eade] border border-[#d3d4c8] p-6 space-y-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-2 max-w-2xl">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#333333]">
-                    <span className="font-semibold text-[#fcfcfd] bg-[#3f6212] px-2.5 py-0.5 rounded-full">
-                      {selectedRecipe.cuisine}
-                    </span>
-                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-[#333333] tabular-nums">
-                      <Clock className="h-3 w-3 text-[#3f6212]" />
-                      {selectedRecipe.prep_time_minutes +
-                        selectedRecipe.cook_time_minutes}{" "}
-                      min
-                    </span>
-                    <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-[#333333] tabular-nums">
-                      <Users className="h-3 w-3 text-[#3f6212]" />
-                      {currentServings} servings
-                    </span>
-                    <span className="font-mono font-semibold px-2.5 py-0.5 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-[#3f6212] tabular-nums">
-                      ₹{scaledTotalCost}
-                    </span>
-                  </div>
-
-                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#000000]">
-                    {selectedRecipe.title}
-                  </h2>
-
-                  <p className="text-sm text-[#333333] leading-relaxed">
-                    {selectedRecipe.description}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("sous-chef")}
-                  className="btn-press px-5 py-3 rounded-full bg-[#3f6212] hover:bg-[#33500e] text-[#fcfcfd] font-medium text-xs sm:text-sm flex items-center gap-2"
-                >
-                  <Mic className="h-4 w-4" />
-                  <span>Cook Hands-Free</span>
-                </button>
-              </div>
-
-              {/* 1-Click Dietary & Cooking Style Adaptations */}
-              <div className="pt-4 border-t border-[#d3d4c8] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#333333] flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-[#3f6212]" />
-                    Adapt recipe in one click
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      {
-                        mode: "high_protein",
-                        label: "High-Protein (+40%)",
-                      },
-                      {
-                        mode: "jain_no_onion_garlic",
-                        label: "Jain (No Onion-Garlic)",
-                      },
-                      {
-                        mode: "vegan",
-                        label: "Plant-Based / Vegan",
-                      },
-                      {
-                        mode: "air_fryer",
-                        label: "Air-Fryer (-65% Oil)",
-                      },
-                    ] as const
-                  ).map((item) => (
-                    <button
-                      key={item.mode}
-                      type="button"
-                      disabled={activeRemixLoading !== null}
-                      onClick={() => void handleOneClickAiRemix(item.mode)}
-                      className="btn-press px-3.5 py-1.5 rounded-full bg-[#f1f3e6] hover:bg-[#3f6212] hover:text-[#fcfcfd] border border-[#d3d4c8] text-xs font-medium text-[#000000] flex items-center gap-1.5"
-                    >
-                      {activeRemixLoading === item.mode && (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      )}
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Save Personal Version */}
-              <div className="pt-3 border-t border-[#d3d4c8] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <label htmlFor="remix-note-input" className="sr-only">
-                  Personal recipe note
-                </label>
-                <input
-                  id="remix-note-input"
-                  type="text"
-                  value={remixNote}
-                  onChange={(e) => setRemixNote(e.target.value)}
-                  placeholder="Add a personal note (e.g., extra ginger, less chili)..."
-                  className="flex-1 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] px-4 py-2 text-xs text-[#000000] placeholder:text-[#4d4c4c] focus:outline-none focus:border-[#3f6212]"
-                />
-                <button
-                  type="button"
-                  disabled={isForking}
-                  onClick={() => void handleForkRemix()}
-                  className="btn-press px-4 py-2 rounded-full bg-[#f1f3e6] hover:border-[#3f6212] text-[#000000] border border-[#d3d4c8] text-xs font-medium flex items-center justify-center gap-1.5"
-                >
-                  <GitFork className="h-3.5 w-3.5 text-[#3f6212]" />
-                  <span>{isForking ? "Saving..." : "Save My Version"}</span>
-                </button>
-              </div>
-            </div>
-
-            <IngredientList
-              recipeTitle={selectedRecipe.title}
-              baseServings={selectedRecipe.servings}
-              currentServings={currentServings}
-              onChangeServings={setCurrentServings}
-              unitSystem={unitSystem}
-              onChangeUnitSystem={setUnitSystem}
-              ingredients={selectedRecipe.ingredients}
-              onReplaceIngredient={handleReplaceIngredient}
-            />
-
-            <ParallelTimeline
-              steps={selectedRecipe.timeline_steps}
-              onStartStepTimer={(label, seconds, stepNum) => {
-                startTimer(label, seconds, stepNum);
-              }}
-            />
-          </div>
-        </div>
+          <AddDishTo3DStudioCard
+            unitSystem={unitSystem}
+            onDishAdded={(newRecipe) => {
+              focusAddedDishInStudio(newRecipe);
+            }}
+          />
         </div>
       )}
 
@@ -445,10 +263,17 @@ export default function MiseFoodWorkspacePage() {
         onClose={() => setOcrModalOpen(false)}
         unitSystem={unitSystem}
         onRecipeParsed={(newRecipe) => {
-          setRecipes((prev) => [newRecipe, ...prev]);
-          setSelectedRecipe(newRecipe);
-          setCurrentServings(newRecipe.servings);
-          setActiveTab("hub");
+          focusAddedDishInStudio(newRecipe);
+          requestAnimationFrame(() => {
+            const el = document.getElementById("dish-3d-studio-top");
+            if (el) {
+              if (window.__potlyLenis) {
+                window.__potlyLenis.scrollTo(el, { offset: -96, duration: 1.0 });
+              } else {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }
+          });
         }}
       />
     </EloqwntLandingShell>

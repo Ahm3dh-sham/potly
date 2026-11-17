@@ -368,10 +368,34 @@ function defaultStepsForDish(
   ];
 }
 
+function inferHeroImageUrl(title: string, cuisine = ""): string {
+  const lower = `${title} ${cuisine}`.toLowerCase();
+  if (/(dosa|idli|sambar|tiffin|south|uttapam|vada)/i.test(lower)) {
+    return "/recipes/mysore-masala-dosa-3d.jpg";
+  }
+  if (/(prawn|fish|kerala|malabar|appam|coastal|chemmeen|seafood)/i.test(lower)) {
+    return "/recipes/malabar-prawn-appam-3d.jpg";
+  }
+  if (/(pav|bhaji|mumbai|west|street|chole|chaat)/i.test(lower)) {
+    return "/recipes/mumbai-pav-bhaji-3d.jpg";
+  }
+  if (/(bengali|east|kolkata|pulao|kosha|soya|biryani|handi)/i.test(lower)) {
+    return "/recipes/kolkata-kosha-pulao-3d.jpg";
+  }
+  if (/(chicken|tikka|tandoori|quinoa|air-fryer|bowl)/i.test(lower)) {
+    return "/recipes/tandoori-chicken-bowl-3d.jpg";
+  }
+  if (/(dal|palak|thali|rice|moong|khichdi|spinach|toor)/i.test(lower)) {
+    return "/recipes/dal-palak-thali-3d.jpg";
+  }
+  return "/recipes/paneer-tikka-3d.jpg";
+}
+
 function buildSmartDishFromTitle(titleHint: string): {
   title: string;
   cuisine: string;
   description: string;
+  heroImageUrl: string;
   ingredients: NormalizedIngredient[];
   steps: ParallelTimelineNode[];
 } {
@@ -391,8 +415,85 @@ function buildSmartDishFromTitle(titleHint: string): {
       cuisine: "North Indian",
       description:
         "Velvety emerald spinach puree gently simmered with golden seared paneer cubes and crowned with crisp burnt-garlic ghee tadka.",
+      heroImageUrl: "/recipes/paneer-tikka-3d.jpg",
       ingredients: ings,
       steps: defaultStepsForDish("Lasooni Palak Paneer", ings),
+    };
+  }
+
+  if (lower.includes("dosa") || lower.includes("idli") || lower.includes("sambar")) {
+    const ings = [
+      makeIngredient("fermented dosa & idli batter", 2.5, "katori", "room temp"),
+      makeIngredient("boiled potatoes (aloo)", 2, "katori", "lightly mashed with turmeric"),
+      makeIngredient("roasted chana dal & grated coconut", 0.75, "katori", "ground silky"),
+      makeIngredient("toor dal for tiffin sambar", 0.5, "katori", "pressure cooked"),
+      makeIngredient("cow ghee & mustard seeds", 2, "tbsp", "for crisp roast & tadka"),
+    ];
+    return {
+      title: cleanOrDefaultTitle(titleHint, "Crispy Mysore Masala Dosa & Chutney"),
+      cuisine: "South Indian Tiffin",
+      description:
+        "Paper-crisp fermented golden crepe spread with spiced red chili chutney, turmeric potato palya, and hot drumstick tiffin sambar.",
+      heroImageUrl: "/recipes/mysore-masala-dosa-3d.jpg",
+      ingredients: ings,
+      steps: defaultStepsForDish("Crispy Masala Dosa", ings),
+    };
+  }
+
+  if (/(prawn|chemmeen|fish|appam|malabar|kerala)/i.test(lower)) {
+    const ings = [
+      makeIngredient("cleaned tiger prawns or fish cubes", 350, "g", "marinated in turmeric"),
+      makeIngredient("sliced shallots & curry leaves", 1, "katori", "thinly sliced"),
+      makeIngredient("virgin coconut oil & coconut slivers", 2, "tbsp", "toasted crisp"),
+      makeIngredient("crushed tellicherry black pepper", 1.5, "tbsp", "coarsely pounded"),
+      makeIngredient("fermented appam batter", 2, "katori", "ready to swirl"),
+    ];
+    return {
+      title: cleanOrDefaultTitle(titleHint, "Malabar Coconut Pepper Roast & Appam"),
+      cuisine: "Kerala Coastal",
+      description:
+        "Caramelized shallots, crispy toasted coconut slivers, and cracked black pepper sear over juicy coastal prawns beside lacy appams.",
+      heroImageUrl: "/recipes/malabar-prawn-appam-3d.jpg",
+      ingredients: ings,
+      steps: defaultStepsForDish("Malabar Pepper Roast", ings),
+    };
+  }
+
+  if (/(pav|bhaji|chole|chaat|mumbai|street|bhature)/i.test(lower)) {
+    const ings = [
+      makeIngredient("potato, cauliflower & green peas mix", 3, "katori", "pressure steamed"),
+      makeIngredient("grated beetroot (natural crimson color)", 0.5, "katori", "boiled with veggies"),
+      makeIngredient("pav bhaji or chana masala blend", 2.5, "tbsp", "toasted in butter"),
+      makeIngredient("soft ladi pav buns", 6, "piece", "halved & butter toasted"),
+      makeIngredient("salted white butter (makkhan)", 3, "tbsp", "divided for tawa & finish"),
+    ];
+    return {
+      title: cleanOrDefaultTitle(titleHint, "Mumbai Tawa Pav Bhaji with Makkhan"),
+      cuisine: "West Indian Street Classic",
+      description:
+        "Butter-smashed street-style vegetable bhaji naturally ruby-tinted with roasted beetroot and served with toasted ladi pav.",
+      heroImageUrl: "/recipes/mumbai-pav-bhaji-3d.jpg",
+      ingredients: ings,
+      steps: defaultStepsForDish("Mumbai Tawa Pav Bhaji", ings),
+    };
+  }
+
+  if (/(pulao|biryani|kosha|soya|bengali|handi)/i.test(lower)) {
+    const ings = [
+      makeIngredient("aged basmati or gobindobhog rice", 1.5, "katori", "rinsed & coated in haldi ghee"),
+      makeIngredient("soya nuggets or marinated paneer/protein", 2, "katori", "seared deeply"),
+      makeIngredient("caramelized red onions", 1.5, "katori", "slow-browned"),
+      makeIngredient("whole cashews & golden raisins", 0.35, "katori", "ghee toasted"),
+      makeIngredient("whole garam masala & saffron strands", 1.5, "tbsp", "steeped in warm milk"),
+    ];
+    return {
+      title: cleanOrDefaultTitle(titleHint, "Handi Kosha Masala & Fragrant Pulao"),
+      cuisine: "East & Royal Indian",
+      description:
+        "Slow-caramelized handi masala simmered till glossy alongside fragrant saffron-cashew pulao steamed in a sealed pot.",
+      heroImageUrl: "/recipes/kolkata-kosha-pulao-3d.jpg",
+      ingredients: ings,
+      steps: defaultStepsForDish("Handi Kosha & Pulao", ings),
     };
   }
 
@@ -414,12 +515,13 @@ function buildSmartDishFromTitle(titleHint: string): {
       cuisine: "North Indian Tandoori",
       description:
         "High-protein spiced yogurt marinade charred crisp at 200°C with smoky dhaba flavor and 65% less oil.",
+      heroImageUrl: "/recipes/tandoori-chicken-bowl-3d.jpg",
       ingredients: ings,
       steps: defaultStepsForDish("Tandoori Chicken Tikka", ings),
     };
   }
 
-  if (lower.includes("khichdi") || lower.includes("dal")) {
+  if (lower.includes("khichdi") || lower.includes("dal") || lower.includes("thali")) {
     const ings = [
       makeIngredient("yellow moong dal", 0.75, "katori", "washed & soaked 15m"),
       makeIngredient("sona masoori or basmati rice", 0.75, "katori", "rinsed clean"),
@@ -432,18 +534,13 @@ function buildSmartDishFromTitle(titleHint: string): {
       cuisine: "Indian Comfort",
       description:
         "One-pot pressure-cooked moong dal and rice khichdi topped with fragrant cumin, hing, and roasted garlic ghee tadka.",
+      heroImageUrl: "/recipes/dal-palak-thali-3d.jpg",
       ingredients: ings,
       steps: defaultStepsForDish("Tadka Dal Khichdi", ings),
     };
   }
 
-  const cleanTitle = titleHint
-    .replace(/https?:\/\/\S+/g, "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const finalTitle = cleanTitle || "Imported Home Kitchen Special";
+  const finalTitle = cleanOrDefaultTitle(titleHint, "Imported Home Kitchen Special");
   const ings = [
     makeIngredient("fresh seasonal vegetables or protein", 300, "g", "diced evenly"),
     makeIngredient("red onion", 1, "piece", "finely sliced", 110),
@@ -456,9 +553,22 @@ function buildSmartDishFromTitle(titleHint: string): {
     title: finalTitle,
     cuisine: "Indian & Global Home Kitchen",
     description: `Structured recipe imported directly from your link/notes into normalized 150ml katori and gram measurements.`,
+    heroImageUrl: inferHeroImageUrl(finalTitle),
     ingredients: ings,
     steps: defaultStepsForDish(finalTitle, ings),
   };
+}
+
+function cleanOrDefaultTitle(raw: string, fallback: string): string {
+  const cleanTitle = raw
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleanTitle || /^(instagram|youtube|reel|shorts?)$/i.test(cleanTitle)) {
+    return fallback;
+  }
+  return cleanTitle;
 }
 
 function decodeHtmlEntities(str: string): string {
@@ -690,8 +800,14 @@ export async function POST(req: Request) {
       sourceType = urlMeta.sourceType;
       authorName = urlMeta.authorName;
 
+      const userTitleOverride = rawText
+        ? rawText.split(/\r?\n/)[0]?.replace(/^(title|recipe)\s*:\s*/i, "").trim()
+        : "";
+      const effectiveTitleHint =
+        userTitleOverride || urlMeta.titleHint;
+
       if (urlMeta.extractedIngredients.length > 0) {
-        title = urlMeta.titleHint;
+        title = userTitleOverride || urlMeta.titleHint;
         description =
           urlMeta.description.slice(0, 260) ||
           `Imported directly from ${sourceType.replace("_", " ")}.`;
@@ -713,7 +829,7 @@ export async function POST(req: Request) {
               }))
             : defaultStepsForDish(title, ingredients);
       } else {
-        const smart = buildSmartDishFromTitle(urlMeta.titleHint);
+        const smart = buildSmartDishFromTitle(effectiveTitleHint);
         title = smart.title;
         cuisine = smart.cuisine;
         description = urlMeta.description
@@ -791,6 +907,13 @@ export async function POST(req: Request) {
       )
     );
 
+    const uploadedImageDataUrl =
+      body.image_base64 && body.image_base64.length <= 2_500_000
+        ? body.image_base64.startsWith("data:")
+          ? body.image_base64
+          : `data:${body.image_mime_type || "image/jpeg"};base64,${body.image_base64}`
+        : null;
+
     const recipe: Recipe = {
       id: `imp-${Date.now()}`,
       title: adapted.title,
@@ -812,7 +935,7 @@ export async function POST(req: Request) {
       ),
       servings,
       estimated_total_cost_inr: totalCost,
-      hero_image_url: null,
+      hero_image_url: uploadedImageDataUrl ?? inferHeroImageUrl(adapted.title, cuisine),
       ingredients: adapted.ingredients,
       timeline_steps: adapted.steps,
       tags: adapted.tags,

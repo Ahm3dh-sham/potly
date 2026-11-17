@@ -9,19 +9,31 @@ import {
   useTransform,
 } from "framer-motion";
 import {
+  Box,
   ChevronLeft,
   ChevronRight,
   Clock,
   Flame,
+  GitFork,
+  Layers,
   Loader2,
   Mic,
+  Plus,
   RotateCcw,
   Sparkles,
   Users,
 } from "lucide-react";
 import { SlidingNumber } from "@/components/core/sliding-number";
-import { getRecipe3DImage } from "@/lib/api";
-import type { Recipe, RemixMode, UnitSystem } from "@/types/recipe";
+import { IngredientList } from "@/components/recipes/IngredientList";
+import { ParallelTimeline } from "@/components/recipes/ParallelTimeline";
+import { ProceduralDishThreeCanvas } from "@/components/recipes/ProceduralDishThreeCanvas";
+import { getRecipe3DImage, getRecipeArchetype } from "@/lib/api";
+import type {
+  NormalizedIngredient,
+  Recipe,
+  RemixMode,
+  UnitSystem,
+} from "@/types/recipe";
 
 interface RecipeRemix3DScrollStageProps {
   recipes: Recipe[];
@@ -29,6 +41,21 @@ interface RecipeRemix3DScrollStageProps {
   currentServings: number;
   unitSystem: UnitSystem;
   activeRemixLoading: RemixMode | null;
+  remixNote: string;
+  isForking: boolean;
+  onChangeRemixNote: (note: string) => void;
+  onForkRemix: () => void;
+  onChangeServings: (servings: number) => void;
+  onChangeUnitSystem: (sys: UnitSystem) => void;
+  onReplaceIngredient: (
+    idx: number,
+    replacement: NormalizedIngredient
+  ) => void;
+  onStartStepTimer: (
+    label: string,
+    durationSeconds: number,
+    stepNumber: number
+  ) => void;
   onSelectRecipe: (recipe: Recipe) => void;
   onTriggerRemix: (mode: RemixMode) => void;
   onStartCooking: (recipe: Recipe) => void;
@@ -98,7 +125,11 @@ const UNIT_SYSTEM_LABEL: Record<UnitSystem, string> = {
   imperial: "US Cups & Oz",
 };
 
-function computeCircularOffset(index: number, activeIndex: number, total: number): number {
+function computeCircularOffset(
+  index: number,
+  activeIndex: number,
+  total: number
+): number {
   if (total <= 1) return 0;
   let diff = (index - activeIndex + total) % total;
   if (diff > total / 2) diff -= total;
@@ -111,13 +142,22 @@ export function RecipeRemix3DScrollStage({
   currentServings,
   unitSystem,
   activeRemixLoading,
+  remixNote,
+  isForking,
+  onChangeRemixNote,
+  onForkRemix,
+  onChangeServings,
+  onChangeUnitSystem,
+  onReplaceIngredient,
+  onStartStepTimer,
   onSelectRecipe,
   onTriggerRemix,
   onStartCooking,
 }: RecipeRemix3DScrollStageProps) {
-  const stageRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
   const wheelCooldownRef = useRef<number>(0);
   const touchStartXRef = useRef<number | null>(null);
+  const [view3DMode, setView3DMode] = useState<"render" | "model">("render");
   const [pointerTilt, setPointerTilt] = useState<{ rx: number; ry: number }>({
     rx: 0,
     ry: 0,
@@ -135,10 +175,16 @@ export function RecipeRemix3DScrollStage({
   });
   const upperTrackDrift = useTransform(smoothProgress, [0, 1], [16, -16]);
   const lowerTrackDrift = useTransform(smoothProgress, [0, 1], [-12, 12]);
-  const auraScale = useTransform(smoothProgress, [0, 0.5, 1], [0.92, 1.08, 0.94]);
+  const auraScale = useTransform(
+    smoothProgress,
+    [0, 0.5, 1],
+    [0.92, 1.08, 0.94]
+  );
 
   const safeRecipes = recipes.length > 0 ? recipes : [selectedRecipe];
-  const rawActiveIndex = safeRecipes.findIndex((r) => r.id === selectedRecipe.id);
+  const rawActiveIndex = safeRecipes.findIndex(
+    (r) => r.id === selectedRecipe.id
+  );
   const activeIndex = rawActiveIndex >= 0 ? rawActiveIndex : 0;
 
   const stepRecipe = useCallback(
@@ -182,7 +228,7 @@ export function RecipeRemix3DScrollStage({
   };
 
   const handlePointerMoveCenter = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== "mouse") return;
+    if (e.pointerType !== "mouse" || view3DMode === "model") return;
     const rect = e.currentTarget.getBoundingClientRect();
     const nx = (e.clientX - rect.left) / rect.width - 0.5;
     const ny = (e.clientY - rect.top) / rect.height - 0.5;
@@ -192,8 +238,20 @@ export function RecipeRemix3DScrollStage({
     });
   };
 
+  const scrollToAddDock = () => {
+    const el = document.getElementById("add-dish-3d-dock");
+    if (!el) return;
+    if (window.__potlyLenis) {
+      window.__potlyLenis.scrollTo(el, { offset: -96, duration: 1.0 });
+    } else {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const activeScaleFactor =
-    selectedRecipe.servings > 0 ? currentServings / selectedRecipe.servings : 1;
+    selectedRecipe.servings > 0
+      ? currentServings / selectedRecipe.servings
+      : 1;
   const activeCostInr = Math.round(
     selectedRecipe.estimated_total_cost_inr * activeScaleFactor
   );
@@ -212,13 +270,17 @@ export function RecipeRemix3DScrollStage({
   const totalMinutes =
     selectedRecipe.prep_time_minutes + selectedRecipe.cook_time_minutes;
 
-  // Short scannable dish headline for the editorial pill strip
   const shortDishName = useMemo(() => {
-    const cleaned = selectedRecipe.title.replace(/\s*\([^)]*\)\s*$/g, "").trim();
-    return cleaned.length > 44 ? `${cleaned.slice(0, 42).trimEnd()}…` : cleaned;
+    const cleaned = selectedRecipe.title
+      .replace(/\s*\([^)]*\)\s*$/g, "")
+      .trim();
+    return cleaned.length > 44
+      ? `${cleaned.slice(0, 42).trimEnd()}…`
+      : cleaned;
   }, [selectedRecipe.title]);
 
   const activeRemixKey = selectedRecipe.remix_mode ?? "original";
+  const activeArchetype = getRecipeArchetype(selectedRecipe);
 
   const handleRemixCardClick = (item: RemixTrackItem) => {
     if (item.mode === null) {
@@ -239,23 +301,61 @@ export function RecipeRemix3DScrollStage({
 
   return (
     <section
+      id="dish-3d-studio-top"
       ref={stageRef}
-      aria-label="3D Recipes and Remix Showcase"
-      className="relative mb-8 overflow-hidden rounded-[12px] border border-[#d3d4c8] bg-[#f1f3e6] shadow-[0_18px_50px_rgba(30,22,18,0.06)]"
+      aria-label="3D Recipes, Remix, and Prep Studio"
+      className="scroll-mt-24 relative overflow-hidden rounded-[12px] border border-[#d3d4c8] bg-[#f1f3e6] shadow-[0_18px_50px_rgba(30,22,18,0.06)]"
     >
       {/* Top Studio Header Strip */}
-      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-[#d3d4c8]/80 bg-[#e9eade]/70 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2.5">
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-[#d3d4c8]/80 bg-[#e9eade]/80 px-4 py-3 sm:px-6">
+        <div className="flex flex-wrap items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3f6212] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#fcfcfd]">
             <Flame className="h-3 w-3" />
-            3D Dish &amp; Remix Stage
+            3D Dish, Remix &amp; Prep Studio
           </span>
-          <span className="text-xs font-medium text-[#4d4c4c]">
-            Swipe, scroll sideways, or tap side plates to mix &amp; remix
-          </span>
+          <button
+            type="button"
+            onClick={scrollToAddDock}
+            className="btn-press inline-flex items-center gap-1 rounded-full border border-[#3f6212]/40 bg-[#f1f3e6] px-2.5 py-1 text-[11px] font-semibold text-[#3f6212] hover:bg-[#3f6212] hover:text-[#fcfcfd]"
+          >
+            <Plus className="h-3 w-3" />
+            Add Dish (Reel / YT / Photo)
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* 3D Studio Render vs Live img2threejs Interactive 3D Model Toggle */}
+          <div
+            role="group"
+            aria-label="3D Presentation Mode"
+            className="inline-flex items-center rounded-full border border-[#d3d4c8] bg-[#f1f3e6] p-0.5 text-[11px]"
+          >
+            <button
+              type="button"
+              onClick={() => setView3DMode("render")}
+              className={`btn-press inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold transition-colors ${
+                view3DMode === "render"
+                  ? "bg-[#3f6212] text-[#fcfcfd]"
+                  : "text-[#4d4c4c] hover:text-[#1e1612]"
+              }`}
+            >
+              <Layers className="h-3 w-3" />
+              3D Studio Image
+            </button>
+            <button
+              type="button"
+              onClick={() => setView3DMode("model")}
+              className={`btn-press inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold transition-colors ${
+                view3DMode === "model"
+                  ? "bg-[#3f6212] text-[#fcfcfd]"
+                  : "text-[#4d4c4c] hover:text-[#1e1612]"
+              }`}
+            >
+              <Box className="h-3 w-3" />
+              3D Model (img2threejs)
+            </button>
+          </div>
+
           <span className="font-mono text-xs font-semibold text-[#1e1612] tabular-nums">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}
             {String(safeRecipes.length).padStart(2, "0")}
@@ -286,13 +386,13 @@ export function RecipeRemix3DScrollStage({
         onWheel={handleWheelOnStage}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="relative overflow-hidden px-3 pt-6 pb-4 sm:px-8 sm:pt-8 sm:pb-6"
+        className="relative overflow-hidden px-3 pt-6 pb-6 sm:px-8 sm:pt-8 sm:pb-8"
       >
         {/* Central radial aura matching the Vogue Business / Archrival stage */}
         <motion.div
           aria-hidden="true"
           style={{ scale: auraScale }}
-          className="pointer-events-none absolute left-1/2 top-[44%] h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full sm:h-[460px] sm:w-[460px]"
+          className="pointer-events-none absolute left-1/2 top-[220px] h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full sm:top-[260px] sm:h-[460px] sm:w-[460px]"
         >
           <div
             className="h-full w-full rounded-full"
@@ -306,7 +406,7 @@ export function RecipeRemix3DScrollStage({
         {/* Subtle editorial watermark coordinates behind center aura */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-5 z-0 flex items-center justify-between px-6 text-[10px] font-mono uppercase tracking-[0.18em] text-[#4d4c4c]/60 sm:px-10"
+          className="pointer-events-none absolute inset-x-0 top-5 z-0 flex items-center justify-between px-6 font-mono text-[10px] uppercase tracking-[0.18em] text-[#4d4c4c]/60 sm:px-10"
         >
           <span>150ML KATORI / 3D STUDIO</span>
           <span>POTLY ARCHIVE</span>
@@ -315,7 +415,7 @@ export function RecipeRemix3DScrollStage({
         {/* 3-Slot Perspective Stage (Left Flank • Center Spotlight • Right Flank) */}
         <motion.div
           style={{ x: upperTrackDrift, perspective: 1400 }}
-          className="relative z-10 mx-auto h-[290px] w-full max-w-[980px] sm:h-[360px]"
+          className="relative z-10 mx-auto h-[295px] w-full max-w-[980px] sm:h-[365px]"
         >
           {safeRecipes.map((recipe, idx) => {
             const offset = computeCircularOffset(
@@ -328,6 +428,7 @@ export function RecipeRemix3DScrollStage({
             if (!isVisible) return null;
 
             const imgSrc = getRecipe3DImage(recipe);
+            const isCustomPhoto = imgSrc.startsWith("data:image/");
 
             const targetX =
               offset === 0
@@ -389,51 +490,81 @@ export function RecipeRemix3DScrollStage({
                         }
                       }
                 }
-                className={`absolute left-1/2 top-0 flex w-[235px] -ml-[117.5px] flex-col items-center sm:w-[310px] sm:-ml-[155px] ${
+                className={`absolute left-1/2 top-0 flex w-[245px] -ml-[122.5px] flex-col items-center sm:w-[320px] sm:-ml-[160px] ${
                   isCenter ? "cursor-default" : "cursor-pointer"
                 }`}
               >
-                {/* 3D Floating Plated Render */}
-                <motion.div
-                  animate={
-                    isCenter
-                      ? {
-                          rotateX: pointerTilt.rx,
-                          rotateY: pointerTilt.ry,
-                        }
-                      : { rotateX: 0, rotateY: 0 }
-                  }
-                  transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                  className="relative flex h-[210px] w-[210px] items-center justify-center sm:h-[272px] sm:w-[272px]"
-                >
-                  <img
-                    src={imgSrc}
-                    alt={recipe.title}
-                    draggable={false}
-                    className={`h-full w-full object-contain transition-transform duration-300 select-none ${
+                {/* Center Spotlight: Either Crisp 3D Studio Render or Live Orbitable Three.js Model */}
+                {isCenter && view3DMode === "model" ? (
+                  <div className="relative h-[240px] w-[260px] sm:h-[300px] sm:w-[330px]">
+                    <ProceduralDishThreeCanvas
+                      archetype={activeArchetype}
+                      title={selectedRecipe.title}
+                      customPhotoDataUrl={
+                        selectedRecipe.hero_image_url?.startsWith("data:image/")
+                          ? selectedRecipe.hero_image_url
+                          : null
+                      }
+                    />
+                  </div>
+                ) : (
+                  <motion.div
+                    animate={
                       isCenter
-                        ? "drop-shadow-[0_24px_26px_rgba(30,22,18,0.18)]"
-                        : "hover:scale-[1.03] drop-shadow-[0_14px_16px_rgba(30,22,18,0.10)]"
-                    }`}
-                    style={{
-                      WebkitMaskImage:
-                        "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
-                      maskImage:
-                        "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
-                    }}
-                  />
+                        ? {
+                            rotateX: pointerTilt.rx,
+                            rotateY: pointerTilt.ry,
+                          }
+                        : { rotateX: 0, rotateY: 0 }
+                    }
+                    transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                    className="relative flex h-[215px] w-[215px] items-center justify-center sm:h-[276px] sm:w-[276px]"
+                  >
+                    {isCustomPhoto ? (
+                      <div className="relative h-[196px] w-[196px] overflow-hidden rounded-full border-4 border-[#e9eade] bg-[#f1f3e6] shadow-[0_24px_30px_rgba(30,22,18,0.22)] ring-2 ring-[#C44D28]/40 sm:h-[246px] sm:w-[246px]">
+                        <img
+                          src={imgSrc}
+                          alt={recipe.title}
+                          draggable={false}
+                          className="h-full w-full object-cover select-none"
+                        />
+                      </div>
+                    ) : (
+                      <img
+                        src={imgSrc}
+                        alt={recipe.title}
+                        draggable={false}
+                        className={`h-full w-full object-contain transition-transform duration-300 select-none ${
+                          isCenter
+                            ? "drop-shadow-[0_24px_26px_rgba(30,22,18,0.18)]"
+                            : "hover:scale-[1.03] drop-shadow-[0_14px_16px_rgba(30,22,18,0.10)]"
+                        }`}
+                        style={{
+                          WebkitMaskImage:
+                            "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
+                          maskImage:
+                            "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
+                        }}
+                      />
+                    )}
 
-                  {isCenter && recipe.remix_note && (
-                    <span className="absolute right-2 top-2 rounded-full border border-[#3f6212] bg-[#3f6212] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#fcfcfd] shadow-sm">
-                      Remixed
-                    </span>
-                  )}
-                </motion.div>
+                    {isCenter && recipe.remix_note && (
+                      <span className="absolute right-2 top-2 rounded-full border border-[#3f6212] bg-[#3f6212] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#fcfcfd] shadow-sm">
+                        Remixed
+                      </span>
+                    )}
+                    {isCenter && recipe.id.startsWith("imp-") && (
+                      <span className="absolute left-2 top-2 rounded-full bg-[#C44D28] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#fcfcfd] shadow-sm">
+                        Added to 3D
+                      </span>
+                    )}
+                  </motion.div>
+                )}
 
                 {/* Side Dish Peek Label (Clickable to bring into spotlight) */}
                 {!isCenter && Math.abs(offset) === 1 && (
                   <div className="mt-1 max-w-[190px] text-center">
-                    <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#4d4c4c]">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#4d4c4c]">
                       {recipe.cuisine}
                     </p>
                     <p className="mt-0.5 line-clamp-1 text-xs font-semibold text-[#1e1612]">
@@ -447,7 +578,7 @@ export function RecipeRemix3DScrollStage({
         </motion.div>
 
         {/* Active Center Recipe Nameplate & Animated Live Price / Stats */}
-        <div className="relative z-20 mx-auto -mt-3 max-w-2xl text-center sm:-mt-5">
+        <div className="relative z-20 mx-auto -mt-2 max-w-2xl text-center sm:-mt-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={selectedRecipe.id}
@@ -477,11 +608,14 @@ export function RecipeRemix3DScrollStage({
               <h3 className="text-xl font-semibold tracking-[-0.03em] text-[#1e1612] sm:text-3xl">
                 {selectedRecipe.title}
               </h3>
+              <p className="mx-auto max-w-xl text-xs leading-relaxed text-[#4d4c4c] sm:text-sm">
+                {selectedRecipe.description}
+              </p>
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Lower Track: Counter-Gliding 1-Click Remix Wheel (Matches Reference Mix-and-Match Bottom Track) */}
+        {/* Lower Track: Counter-Gliding 1-Click Remix Wheel */}
         <motion.div
           style={{ x: lowerTrackDrift }}
           className="relative z-20 mx-auto mt-6 max-w-4xl"
@@ -609,6 +743,7 @@ export function RecipeRemix3DScrollStage({
                   }`}
                 >
                   {String(idx + 1).padStart(2, "0")}
+                  {r.id.startsWith("imp-") ? " ★" : ""}
                 </button>
               );
             })}
@@ -623,6 +758,66 @@ export function RecipeRemix3DScrollStage({
             </button>
           </div>
         </motion.div>
+
+        {/* Integrated Prep & Katori Workspace inside the 3D Studio */}
+        <div className="relative z-20 mx-auto mt-8 max-w-6xl border-t border-[#d3d4c8] pt-6 space-y-6">
+          {/* Save Personal Note / Version Fork Bar */}
+          <div className="flex flex-col gap-3 rounded-[10px] border border-[#d3d4c8] bg-[#e9eade] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f6212]">
+                Dish Prep &amp; Ingredients
+              </span>
+              <span className="text-xs text-[#4d4c4c]">
+                Synced live with{" "}
+                <strong className="text-[#1e1612]">{shortDishName}</strong>
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:min-w-[360px]">
+              <label htmlFor="remix-note-input" className="sr-only">
+                Personal recipe note
+              </label>
+              <input
+                id="remix-note-input"
+                type="text"
+                value={remixNote}
+                onChange={(e) => onChangeRemixNote(e.target.value)}
+                placeholder="Add personal note (e.g., extra ginger, less chili)..."
+                className="flex-1 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-4 py-2 text-xs text-[#000000] placeholder:text-[#4d4c4c] focus:border-[#3f6212] focus:outline-none"
+              />
+              <button
+                type="button"
+                disabled={isForking}
+                onClick={onForkRemix}
+                className="btn-press inline-flex items-center justify-center gap-1.5 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-4 py-2 text-xs font-semibold text-[#000000] hover:border-[#3f6212]"
+              >
+                <GitFork className="h-3.5 w-3.5 text-[#3f6212]" />
+                <span>{isForking ? "Saving..." : "Save My Version"}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <IngredientList
+                recipeTitle={selectedRecipe.title}
+                baseServings={selectedRecipe.servings}
+                currentServings={currentServings}
+                onChangeServings={onChangeServings}
+                unitSystem={unitSystem}
+                onChangeUnitSystem={onChangeUnitSystem}
+                ingredients={selectedRecipe.ingredients}
+                onReplaceIngredient={onReplaceIngredient}
+              />
+            </div>
+            <div className="lg:col-span-7">
+              <ParallelTimeline
+                steps={selectedRecipe.timeline_steps}
+                onStartStepTimer={onStartStepTimer}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
