@@ -7,15 +7,29 @@ import {
   ExternalLink,
   Flame,
   GitMerge,
+  Mic,
   Scale,
   ShoppingCart,
   Sparkles,
+  Sun,
+  Timer,
+  Volume2,
 } from "lucide-react";
+import {
+  MorphingDialog,
+  MorphingDialogClose,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogImage,
+  MorphingDialogSubtitle,
+  MorphingDialogTitle,
+  MorphingDialogTrigger,
+} from "@/components/core/morphing-dialog";
+import { ScrollArea } from "@/components/website/scroll-area";
 
 /**
  * Feature Row 1 Working UI Mockup:
- * Universal Link, Reel & Photo Importer + Katori Scaling + 1-Click Dietary Remix.
- * Built with real working interactive controls on the #f1f3e6 / #e9eade / #3f6212 system.
+ * Universal Link, Reel & Photo Importer + 3D Studio Dish Match + Katori Scaling + 1-Click Dietary Remix.
  */
 export function ImporterFeatureMockup({
   onLaunch,
@@ -28,6 +42,32 @@ export function ImporterFeatureMockup({
   const [dietMode, setDietMode] = useState<
     "original" | "high_protein" | "jain" | "air_fryer"
   >("original");
+  const [dishIdx, setDishIdx] = useState(0);
+
+  const sampleImports = [
+    {
+      source: "Instagram Reel",
+      dish: "Chettinad Mutton Kulambu",
+      subtitle: "Tamil Nadu Chettinad • Clay Chatti 3D Model • 41 min",
+      image: "/recipes/mutton-kulambu-3d.jpg",
+      desc: "Slow-simmered bone-in mutton kulambu with roasted Chettinad coriander-fennel masala, pearl shallots, coconut paste, and gingelly oil.",
+    },
+    {
+      source: "YouTube Shorts",
+      dish: "Smoky Dhaba Paneer Tikka Masala",
+      subtitle: "North Indian Punjabi • Brass Kadhai 3D Model • 35 min",
+      image: "/recipes/paneer-tikka-3d.jpg",
+      desc: "Char-grilled malai paneer cubes in spiced hung curd, simmered in velvety makhani gravy with buttered garlic naan.",
+    },
+    {
+      source: "Dish Photo OCR",
+      dish: "Crispy Mysore Masala Dosa",
+      subtitle: "South Indian Tiffin • Steel Platter 3D Model • 25 min",
+      image: "/recipes/mysore-masala-dosa-3d.jpg",
+      desc: "Golden paper-crisp dosa brushed with fiery Byadgi red garlic chutney, stuffed with turmeric potato palya beside tiffin sambar.",
+    },
+  ];
+  const activeSample = sampleImports[dishIdx] ?? sampleImports[0]!;
 
   const rows = [
     {
@@ -135,6 +175,90 @@ export function ImporterFeatureMockup({
         </div>
       </div>
 
+      {/* Interactive 3D Dish Import Cards (MorphingDialog Lightbox + Active Sync) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {sampleImports.map((sample, idx) => {
+          const isSelected = idx === dishIdx;
+          return (
+            <div
+              key={sample.dish}
+              className={`rounded-[8px] border p-2 transition-colors ${
+                isSelected
+                  ? "border-[#3f6212] bg-[#e9eade]"
+                  : "border-[#d3d4c8] bg-[#e9eade]/55 hover:border-[#3f6212]/60"
+              }`}
+            >
+              <MorphingDialog
+                transition={{ type: "spring", stiffness: 200, damping: 24 }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <MorphingDialogTrigger
+                    style={{ borderRadius: "4px" }}
+                    className="flex flex-1 items-center gap-2.5 text-left"
+                  >
+                    <MorphingDialogImage
+                      src={sample.image}
+                      alt={sample.dish}
+                      className="h-9 w-9 shrink-0 object-cover"
+                      style={{ borderRadius: "4px" }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <MorphingDialogTitle className="line-clamp-1 text-xs font-semibold text-[#000000]">
+                        {sample.dish}
+                      </MorphingDialogTitle>
+                      <MorphingDialogSubtitle className="line-clamp-1 text-[10px] text-[#4d4c4c]">
+                        {sample.source}
+                      </MorphingDialogSubtitle>
+                    </div>
+                  </MorphingDialogTrigger>
+                  <button
+                    type="button"
+                    onClick={() => setDishIdx(idx)}
+                    aria-label={`Select ${sample.dish} preview`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      isSelected
+                        ? "bg-[#3f6212] text-[#fcfcfd]"
+                        : "bg-[#f1f3e6] text-[#4d4c4c] border border-[#d3d4c8]"
+                    }`}
+                  >
+                    {isSelected ? "Active" : "View"}
+                  </button>
+                </div>
+
+                <MorphingDialogContainer>
+                  <MorphingDialogContent
+                    style={{ borderRadius: "12px" }}
+                    className="relative h-auto w-[460px] max-w-[92vw] border border-[#d3d4c8] bg-[#f1f3e6] shadow-2xl"
+                  >
+                    <ScrollArea className="h-[70vh]" type="scroll">
+                      <div className="p-6">
+                        <div className="flex justify-center py-6">
+                          <MorphingDialogImage
+                            src={sample.image}
+                            alt={sample.dish}
+                            className="h-auto w-[200px] rounded-[8px]"
+                          />
+                        </div>
+                        <MorphingDialogTitle className="text-lg font-semibold text-[#000000]">
+                          {sample.dish}
+                        </MorphingDialogTitle>
+                        <MorphingDialogSubtitle className="text-xs text-[#4d4c4c]">
+                          {sample.subtitle}
+                        </MorphingDialogSubtitle>
+                        <p className="mt-3 text-sm leading-relaxed text-[#333333]">
+                          {sample.desc}
+                        </p>
+                      </div>
+                    </ScrollArea>
+                    <MorphingDialogClose />
+                  </MorphingDialogContent>
+                </MorphingDialogContainer>
+              </MorphingDialog>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Interactive 1-Click Dietary Adaptation Bar */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-[#4d4c4c]">
@@ -191,7 +315,7 @@ export function ImporterFeatureMockup({
       {/* Bottom Action Footer */}
       <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#d3d4c8] text-xs">
         <span className="text-[#4d4c4c]">
-          Parsed from Instagram Reel + Handwritten Masala Card
+          Parsed from {activeSample.source} • 3D {activeSample.dish} Ready
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -603,6 +727,108 @@ export function ThaliAndCartFeatureMockup({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Feature Row 4 Working UI Mockup:
+ * Hands-Free Voice Sous Chef with Scaled Ingredient Lookup & Smart Step Timers.
+ */
+export function VoiceSousChefFeatureMockup({
+  onLaunchSousChef,
+}: {
+  onLaunchSousChef: () => void;
+}) {
+  const presets = [
+    {
+      query: "How much chinna vengayam?",
+      reply:
+        "Use 1 katori of pearl shallots (chinna vengayam) (peeled whole & sliced) for Mutton Kulambu.",
+      action: "Scaled Katori Lookup",
+    },
+    {
+      query: "Set a timer for 8 minutes",
+      reply: 'Started "8m Sous-Chef Timer" for 8 minutes while shallots caramelize.',
+      action: "Active Timer: 08:00",
+    },
+    {
+      query: "What can I substitute for coconut?",
+      reply:
+        "Swap fresh grated coconut with soaked and blended white sesame + cashew paste for the same nutty body.",
+      action: "Culinary Substitute",
+    },
+    {
+      query: "Next step",
+      reply:
+        "Advancing to Step 3: Bhuno Tomatoes, Chettinad Kulambu Masala & Sear Mutton until brick-red oil separates.",
+      action: "Step Navigation",
+    },
+  ];
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const current = presets[selectedIdx] ?? presets[0]!;
+
+  return (
+    <div className="rounded-[8px] bg-[#f1f3e6] border border-[#d3d4c8] p-5 sm:p-6 space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#d3d4c8]">
+        <div className="flex items-center gap-2">
+          <Mic className="h-4 w-4 text-[#C44D28]" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#000000]">
+            Hands-Free Voice Sous Chef
+          </span>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-[#e9eade] border border-[#d3d4c8] px-2.5 py-1 text-[11px] font-medium text-[#3f6212]">
+          <Sun className="h-3 w-3" />
+          Screen Wake Lock Ready
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {presets.map((p, idx) => (
+          <button
+            key={p.query}
+            type="button"
+            onClick={() => setSelectedIdx(idx)}
+            className={`btn-press rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              idx === selectedIdx
+                ? "border-[#3f6212] bg-[#3f6212] text-[#fcfcfd]"
+                : "border-[#d3d4c8] bg-[#e9eade] text-[#1e1612] hover:border-[#3f6212]"
+            }`}
+          >
+            &ldquo;{p.query}&rdquo;
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-[8px] bg-[#e9eade] border border-[#d3d4c8] p-4 space-y-2.5">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 font-semibold text-[#C44D28]">
+            <Volume2 className="h-3.5 w-3.5" />
+            Sous Chef Spoken Reply
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] px-2.5 py-0.5 text-[11px] font-mono text-[#3f6212]">
+            <Timer className="h-3 w-3" />
+            {current.action}
+          </span>
+        </div>
+        <p className="text-sm font-medium leading-relaxed text-[#1e1612]">
+          {current.reply}
+        </p>
+      </div>
+
+      <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#d3d4c8] text-xs">
+        <span className="text-[#4d4c4c]">
+          Understands Katori/Metric quantities, swaps, timers &amp; step jumps
+        </span>
+        <button
+          type="button"
+          onClick={onLaunchSousChef}
+          className="btn-press px-3.5 py-1.5 rounded-full bg-[#3f6212] text-[#fcfcfd] font-medium inline-flex items-center gap-1.5"
+        >
+          <Flame className="h-3.5 w-3.5" />
+          <span>Open Voice Chef →</span>
+        </button>
+      </div>
     </div>
   );
 }

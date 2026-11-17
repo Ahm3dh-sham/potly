@@ -2,7 +2,6 @@
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  AnimatePresence,
   motion,
   useScroll,
   useSpring,
@@ -560,19 +559,23 @@ export function RecipeRemix3DScrollStage({
         className="relative overflow-hidden px-3 pt-6 pb-6 sm:px-8 sm:pt-8 sm:pb-8"
       >
         {/* Central radial aura matching the Vogue Business / Archrival stage */}
-        <motion.div
+        <div
           aria-hidden="true"
-          style={{ scale: auraScale }}
-          className="pointer-events-none absolute left-1/2 top-[220px] h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full sm:top-[260px] sm:h-[460px] sm:w-[460px]"
+          className="pointer-events-none absolute left-1/2 top-[170px] -translate-x-1/2 -translate-y-1/2 sm:top-[215px]"
         >
-          <div
-            className="h-full w-full rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(223,155,53,0.34) 0%, rgba(196,77,40,0.20) 34%, rgba(63,98,18,0.12) 56%, rgba(241,243,230,0) 74%)",
-            }}
-          />
-        </motion.div>
+          <motion.div
+            style={{ scale: auraScale }}
+            className="h-[340px] w-[340px] rounded-full sm:h-[460px] sm:w-[460px]"
+          >
+            <div
+              className="h-full w-full rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(223,155,53,0.34) 0%, rgba(196,77,40,0.20) 34%, rgba(63,98,18,0.12) 56%, rgba(241,243,230,0) 74%)",
+              }}
+            />
+          </motion.div>
+        </div>
 
         {/* Subtle editorial watermark coordinates behind center aura */}
         <div
@@ -586,7 +589,7 @@ export function RecipeRemix3DScrollStage({
         {/* 3-Slot Perspective Stage (Left Flank • Center Spotlight • Right Flank) */}
         <motion.div
           style={{ x: upperTrackDrift, perspective: 1400 }}
-          className="relative z-10 mx-auto h-[295px] w-full max-w-[980px] sm:h-[365px]"
+          className="relative z-10 mx-auto h-[270px] w-full max-w-[980px] sm:h-[345px]"
         >
           {safeRecipes.map((recipe, idx) => {
             const offset = computeCircularOffset(
@@ -800,7 +803,7 @@ export function RecipeRemix3DScrollStage({
 
                 {/* Side Dish Peek Label (Clickable to bring into spotlight) */}
                 {!isCenter && Math.abs(offset) === 1 && (
-                  <div className="mt-1 max-w-[190px] text-center">
+                  <div className="mt-1 max-w-[220px] text-center">
                     <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#4d4c4c]">
                       {recipe.cuisine}
                     </p>
@@ -815,41 +818,32 @@ export function RecipeRemix3DScrollStage({
         </motion.div>
 
         {/* Active Center Recipe Nameplate & Animated Live Price / Stats */}
-        <div className="relative z-20 mx-auto -mt-2 max-w-2xl text-center sm:-mt-4">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedRecipe.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-              className="space-y-2"
-            >
-              <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-medium">
-                <span className="rounded-full bg-[#3f6212] px-2.5 py-0.5 font-semibold text-[#fcfcfd]">
-                  {selectedRecipe.cuisine}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#d3d4c8] bg-[#e9eade] px-2.5 py-0.5 text-[#1e1612] tabular-nums">
-                  <Clock className="h-3 w-3 text-[#3f6212]" />
-                  {totalMinutes}m
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#d3d4c8] bg-[#e9eade] px-2.5 py-0.5 text-[#1e1612] tabular-nums">
-                  <Users className="h-3 w-3 text-[#3f6212]" />
-                  {currentServings} servings
-                </span>
-                <span className="inline-flex items-center gap-0.5 rounded-full border border-[#3f6212]/40 bg-[#f1f3e6] px-2.5 py-0.5 font-mono font-bold text-[#3f6212]">
-                  ₹<SlidingNumber value={activeCostInr} />
-                </span>
-              </div>
+        <div className="relative z-20 mx-auto mt-1 max-w-2xl text-center">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-medium">
+              <span className="rounded-full bg-[#3f6212] px-2.5 py-0.5 font-semibold text-[#fcfcfd]">
+                {selectedRecipe.cuisine}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#d3d4c8] bg-[#e9eade] px-2.5 py-0.5 text-[#1e1612] tabular-nums">
+                <Clock className="h-3 w-3 text-[#3f6212]" />
+                {totalMinutes}m
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#d3d4c8] bg-[#e9eade] px-2.5 py-0.5 text-[#1e1612] tabular-nums">
+                <Users className="h-3 w-3 text-[#3f6212]" />
+                {currentServings} servings
+              </span>
+              <span className="inline-flex items-center gap-0.5 rounded-full border border-[#3f6212]/40 bg-[#f1f3e6] px-2.5 py-0.5 font-mono font-bold text-[#3f6212]">
+                ₹<SlidingNumber value={activeCostInr} />
+              </span>
+            </div>
 
-              <h3 className="text-xl font-semibold tracking-[-0.03em] text-[#1e1612] sm:text-3xl">
-                {selectedRecipe.title}
-              </h3>
-              <p className="mx-auto max-w-xl text-xs leading-relaxed text-[#4d4c4c] sm:text-sm">
-                {selectedRecipe.description}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+            <h3 className="text-xl font-semibold tracking-[-0.03em] text-[#1e1612] sm:text-3xl">
+              {selectedRecipe.title}
+            </h3>
+            <p className="mx-auto max-w-xl text-xs leading-relaxed text-[#4d4c4c] sm:text-sm">
+              {selectedRecipe.description}
+            </p>
+          </div>
         </div>
 
         {/* Lower Track: Counter-Gliding 1-Click Remix Wheel */}
@@ -932,13 +926,7 @@ export function RecipeRemix3DScrollStage({
         </motion.div>
 
         {/* Vogue Business / Archrival-Inspired Editorial Pill-Highlighted Story Strip */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-          className="relative z-20 mx-auto mt-7 max-w-3xl border-t border-[#d3d4c8] pt-6 text-center"
-        >
+        <div className="relative z-20 mx-auto mt-7 max-w-3xl border-t border-[#d3d4c8] pt-6 text-center">
           <p className="text-base leading-[1.75] tracking-[-0.015em] text-[#1e1612] sm:text-xl sm:leading-[1.8]">
             Plating{" "}
             <span className="inline-block rounded-md bg-[#d9f99d] px-2 py-0.5 font-semibold text-[#1a2e05]">
@@ -1062,7 +1050,7 @@ export function RecipeRemix3DScrollStage({
               );
             })}
           </div>
-        </motion.div>
+        </div>
 
         {/* Integrated Prep & Katori Workspace inside the 3D Studio */}
         <div className="relative z-20 mx-auto mt-8 max-w-6xl border-t border-[#d3d4c8] pt-6 space-y-6">

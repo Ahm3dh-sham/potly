@@ -996,12 +996,31 @@ function buildSmartDishFromTitle(titleHint: string): {
   };
 }
 
-function cleanOrDefaultTitle(raw: string, fallback: string): string {
-  const cleanTitle = raw
+function sanitizeImportedDishTitle(raw: string): string {
+  const withoutTags = raw
     .replace(/https?:\/\/\S+/g, "")
+    .replace(/#\S+/g, "")
+    .trim();
+  const beforePipe = withoutTags.split(/\s*[|—]\s*/)[0]?.trim() ?? withoutTags;
+  const cleaned = beforePipe
+    .replace(/^how\s+to\s+(?:make|cook|prepare)\s+/i, "")
+    .replace(
+      /\s+(?:recipe\s+)?in\s+(?:tamil|hindi|telugu|malayalam|kannada|english|marathi|bengali|gujarati)\b.*$/i,
+      ""
+    )
+    .replace(
+      /\s+(?:easy\s*(?:&|and)?\s*tasty|hotel\s*style|village\s*cooking|samayal)\b.*$/i,
+      ""
+    )
+    .replace(/\s+recipe$/i, "")
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  return cleaned || beforePipe.replace(/[-_]+/g, " ").trim();
+}
+
+function cleanOrDefaultTitle(raw: string, fallback: string): string {
+  const cleanTitle = sanitizeImportedDishTitle(raw);
   if (!cleanTitle || /^(instagram|youtube|reel|shorts?)$/i.test(cleanTitle)) {
     return fallback;
   }
@@ -1303,12 +1322,14 @@ export async function POST(req: Request) {
         /^(instagram|youtube(\s+recipe\s+video)?|saved\s+web\s+recipe)$/i.test(
           urlMeta.titleHint.trim()
         );
-      const effectiveTitleHint =
-        userTitleOverride ||
-        (!isGenericUrlTitle ? urlMeta.titleHint : "");
+      const effectiveTitleHint = sanitizeImportedDishTitle(
+        userTitleOverride || (!isGenericUrlTitle ? urlMeta.titleHint : "")
+      );
 
       if (urlMeta.extractedIngredients.length > 0) {
-        title = userTitleOverride || urlMeta.titleHint;
+        title = sanitizeImportedDishTitle(
+          userTitleOverride || urlMeta.titleHint
+        );
         description =
           urlMeta.description.slice(0, 260) ||
           `Imported directly from ${sourceType.replace("_", " ")}.`;

@@ -28,6 +28,7 @@ import {
   ImporterFeatureMockup,
   ParallelTimelineFeatureMockup,
   ThaliAndCartFeatureMockup,
+  VoiceSousChefFeatureMockup,
 } from "@/components/landing/ShowcaseMockups";
 import { AnimatedLogoHero } from "@/components/landing/AnimatedLogoHero";
 import { PotlyOpeningSplash } from "@/components/landing/PotlyOpeningSplash";
@@ -139,6 +140,9 @@ export function EloqwntLandingShell({
   const [cmdQuery, setCmdQuery] = useState("");
   const [cliCopied, setCliCopied] = useState(false);
   const [splashReplayCount, setSplashReplayCount] = useState(0);
+  const [howItWorksTab, setHowItWorksTab] = useState<
+    "all" | "studio3d" | "parallel" | "thali" | "voice"
+  >("all");
 
   const studioSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -185,6 +189,19 @@ export function EloqwntLandingShell({
 
   const jumpToMenuBuilder = () => {
     const el = document.getElementById("menu-builder");
+    if (!el) return;
+    if (window.__potlyLenis) {
+      window.__potlyLenis.scrollTo(el, { offset: -88, duration: 1.2 });
+    } else {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const jumpToHowItWorks = (
+    tab: "all" | "studio3d" | "parallel" | "thali" | "voice" = "all"
+  ) => {
+    setHowItWorksTab(tab);
+    const el = document.getElementById("features");
     if (!el) return;
     if (window.__potlyLenis) {
       window.__potlyLenis.scrollTo(el, { offset: -88, duration: 1.2 });
@@ -284,10 +301,10 @@ export function EloqwntLandingShell({
             />
           </a>
 
-          {/* 4 Navigation Links */}
+          {/* Primary Navigation Links */}
           <nav
             aria-label="Primary"
-            className="hidden lg:flex items-center gap-5 xl:gap-7 text-sm font-medium text-[#333333]"
+            className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-medium text-[#333333]"
           >
             <button
               type="button"
@@ -304,6 +321,13 @@ export function EloqwntLandingShell({
               className="whitespace-nowrap hover:text-[#000000] transition-colors font-semibold text-[#3f6212]"
             >
               7-Day Menu
+            </button>
+            <button
+              type="button"
+              onClick={() => jumpToHowItWorks("all")}
+              className="whitespace-nowrap hover:text-[#000000] transition-colors"
+            >
+              How Potly Works
             </button>
             <button
               type="button"
@@ -557,34 +581,73 @@ export function EloqwntLandingShell({
            ===================================================================== */}
         <section
           id="features"
-          className="bg-[#e9eade] pt-[85px] pb-[64px] lg:pt-[128px] lg:pb-[85px] px-6"
+          className="bg-[#e9eade] pt-[85px] pb-[64px] lg:pt-[128px] lg:pb-[85px] px-6 scroll-mt-24"
         >
-          <div className="max-w-[1200px] mx-auto space-y-20 lg:space-y-28">
-            <div className="max-w-[760px]">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f6212] mb-3">
-                How Potly Works
-              </p>
-              <h2 className="text-4xl sm:text-5xl font-medium tracking-[-0.03em] leading-[1.08] text-[#000000]">
-                Three kitchen engines that bridge saving a recipe and serving it
-                hot.
-              </h2>
+          <div className="max-w-[1200px] mx-auto space-y-16 lg:space-y-24">
+            <div className="space-y-6">
+              <div className="max-w-[780px]">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f6212] mb-3">
+                  How Potly Works
+                </p>
+                <h2 className="text-4xl sm:text-5xl font-medium tracking-[-0.03em] leading-[1.08] text-[#000000]">
+                  Four kitchen engines that bridge saving a recipe and serving it
+                  hot.
+                </h2>
+              </div>
+
+              {/* Interactive Engine Tab Switcher */}
+              <div
+                role="tablist"
+                aria-label="How Potly Works Engines"
+                className="flex flex-wrap items-center gap-2 pt-2"
+              >
+                {(
+                  [
+                    { id: "all", label: "All Engines" },
+                    { id: "studio3d", label: "01 • Reel, YT & Photo → 3D Studio" },
+                    { id: "parallel", label: "02 • Multi-Dish Parallel Timing" },
+                    { id: "thali", label: "03 • 7-Day Thali & 10-Min Carts" },
+                    { id: "voice", label: "04 • Hands-Free Voice Sous Chef" },
+                  ] as const
+                ).map((t) => {
+                  const active = howItWorksTab === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setHowItWorksTab(t.id)}
+                      className={`btn-press rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                        active
+                          ? "border-[#3f6212] bg-[#3f6212] text-[#fcfcfd]"
+                          : "border-[#d3d4c8] bg-[#f1f3e6] text-[#1e1612] hover:border-[#3f6212]"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* ROW 1: Text Left, Working UI Mockup Right */}
+            {/* ROW 1: Reel / YT / Photo -> 3D Studio */}
+            {(howItWorksTab === "all" || howItWorksTab === "studio3d") && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               <div className="lg:col-span-5 space-y-5">
                 <span className="inline-block px-3 py-1 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-xs font-semibold text-[#3f6212]">
-                  01 • Import, Scale &amp; Adapt
+                  01 • Reel, YT &amp; Photo → 3D Dish Studio
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-medium tracking-[-0.03em] leading-[1.12] text-[#000000]">
-                  Turn any link, Reel, or handwritten card into exact katoris.
+                  Turn any Reel, YouTube Short, or dish photo into a 3D dish &amp; prep timeline.
                 </h3>
                 <p className="text-[16px] text-[#333333] leading-[1.6]">
-                  Paste a food blog URL, YouTube Short, or Instagram Reel—or
-                  upload a photo of your grandmother&apos;s handwritten masala
-                  card. Potly extracts every ingredient into structured
-                  150ml katoris and grams, then adapts the dish to High-Protein,
-                  Jain (No Onion-Garlic), Vegan, or Air-Fryer in one click.
+                  Drop an Instagram Reel, YouTube video, or dish photo and Potly
+                  pulls the dish visual, builds an orbitable{" "}
+                  <strong>img2threejs</strong> 3D model with a{" "}
+                  <code>MorphingDialog</code> lightbox, converts ingredients into
+                  150ml katoris, and remixes to High-Protein, Jain, Vegan, or
+                  Air-Fryer in one click.
                 </p>
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <button
@@ -592,14 +655,14 @@ export function EloqwntLandingShell({
                     onClick={onOpenOcrModal}
                     className="btn-press px-5 py-2.5 rounded-full bg-[#3f6212] text-[#fcfcfd] text-xs font-medium"
                   >
-                    Import a Recipe Now
+                    Add Reel / YT / Photo
                   </button>
                   <button
                     type="button"
                     onClick={() => jumpToStudioTab("hub")}
                     className="btn-press px-5 py-2.5 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-[#000000] text-xs font-medium"
                   >
-                    Explore Recipe Studio →
+                    Open 3D Dish Studio →
                   </button>
                 </div>
               </div>
@@ -611,8 +674,10 @@ export function EloqwntLandingShell({
                 />
               </div>
             </div>
+            )}
 
-            {/* ROW 2: Working UI Mockup Left, Text Right (Swapped Sides) */}
+            {/* ROW 2: Multi-Dish Parallel Timing */}
+            {(howItWorksTab === "all" || howItWorksTab === "parallel") && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               <div className="lg:col-span-7 order-2 lg:order-1">
                 <ParallelTimelineFeatureMockup
@@ -653,8 +718,10 @@ export function EloqwntLandingShell({
                 </div>
               </div>
             </div>
+            )}
 
-            {/* ROW 3: Text Left, Working UI Mockup Right */}
+            {/* ROW 3: Thali Macros & 10-Min Carts */}
+            {(howItWorksTab === "all" || howItWorksTab === "thali") && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               <div className="lg:col-span-5 space-y-5">
                 <span className="inline-block px-3 py-1 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-xs font-semibold text-[#3f6212]">
@@ -666,10 +733,10 @@ export function EloqwntLandingShell({
                 </h3>
                 <p className="text-[16px] text-[#333333] leading-[1.6]">
                   Plan a full 7-day menu around composite Indian thalis
-                  (Rice/Roti + Dal + Sabji + Curd) or quick single-bowl meals.
-                  Potly automatically combines duplicate ingredients across
-                  the week, subtracts your fridge inventory, and links every
-                  item to Swiggy Instamart, Blinkit, Zepto, and BigBasket.
+                  (Rice/Roti + Dal + Sabji + Curd) or quick single-bowl meals
+                  with a live <code>SlidingNumber</code> grocery budget slider.
+                  Potly merges duplicate ingredients across the week and links
+                  every item to Swiggy Instamart, Blinkit, Zepto, and BigBasket.
                 </p>
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <button
@@ -696,6 +763,51 @@ export function EloqwntLandingShell({
                 />
               </div>
             </div>
+            )}
+
+            {/* ROW 4: Hands-Free Voice Sous Chef */}
+            {(howItWorksTab === "all" || howItWorksTab === "voice") && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              <div className="lg:col-span-7 order-2 lg:order-1">
+                <VoiceSousChefFeatureMockup
+                  onLaunchSousChef={() => jumpToStudioTab("sous-chef")}
+                />
+              </div>
+
+              <div className="lg:col-span-5 order-1 lg:order-2 space-y-5">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-xs font-semibold text-[#3f6212]">
+                  04 • Hands-Free Voice Sous Chef
+                </span>
+                <h3 className="text-3xl sm:text-4xl font-medium tracking-[-0.03em] leading-[1.12] text-[#000000]">
+                  Ask quantities, start named timers, or swap ingredients hands-free.
+                </h3>
+                <p className="text-[16px] text-[#333333] leading-[1.6]">
+                  With Screen Wake Lock active while your hands are busy with
+                  masala or dough, ask Sous Chef &ldquo;How much chinna
+                  vengayam?&rdquo;, &ldquo;Set a timer for 8 minutes&rdquo;, or
+                  &ldquo;What can I substitute for coconut?&rdquo; and hear
+                  instant replies synced to your exact scaled servings and
+                  Katori units.
+                </p>
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => jumpToStudioTab("sous-chef")}
+                    className="btn-press px-5 py-2.5 rounded-full bg-[#3f6212] text-[#fcfcfd] text-xs font-medium"
+                  >
+                    Open Voice Sous Chef
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => jumpToStudioTab("hub")}
+                    className="btn-press px-5 py-2.5 rounded-full bg-[#f1f3e6] border border-[#d3d4c8] text-[#000000] text-xs font-medium"
+                  >
+                    Pick a Dish First →
+                  </button>
+                </div>
+              </div>
+            </div>
+            )}
           </div>
         </section>
 
