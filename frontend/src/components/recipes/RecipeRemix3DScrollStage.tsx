@@ -8,13 +8,11 @@ import {
   useTransform,
 } from "framer-motion";
 import {
-  Box,
   ChevronLeft,
   ChevronRight,
   Clock,
   Flame,
   GitFork,
-  Layers,
   Loader2,
   Mic,
   Plus,
@@ -37,7 +35,6 @@ import {
 import { ScrollArea } from "@/components/website/scroll-area";
 import { IngredientList } from "@/components/recipes/IngredientList";
 import { ParallelTimeline } from "@/components/recipes/ParallelTimeline";
-import { ProceduralDishThreeCanvas } from "@/components/recipes/ProceduralDishThreeCanvas";
 import {
   ARCHETYPE_3D_IMAGE,
   getRecipe3DImage,
@@ -324,7 +321,6 @@ export function RecipeRemix3DScrollStage({
   const stageRef = useRef<HTMLElement>(null);
   const wheelCooldownRef = useRef<number>(0);
   const touchStartXRef = useRef<number | null>(null);
-  const [view3DMode, setView3DMode] = useState<"render" | "model">("render");
   const [failedImgUrls, setFailedImgUrls] = useState<Record<string, boolean>>(
     {}
   );
@@ -398,7 +394,7 @@ export function RecipeRemix3DScrollStage({
   };
 
   const handlePointerMoveCenter = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== "mouse" || view3DMode === "model") return;
+    if (e.pointerType !== "mouse") return;
     const rect = e.currentTarget.getBoundingClientRect();
     const nx = (e.clientX - rect.left) / rect.width - 0.5;
     const ny = (e.clientY - rect.top) / rect.height - 0.5;
@@ -450,7 +446,6 @@ export function RecipeRemix3DScrollStage({
   }, [selectedRecipe.title]);
 
   const activeRemixKey = selectedRecipe.remix_mode ?? "original";
-  const activeArchetype = getRecipeArchetype(selectedRecipe);
 
   const handleRemixCardClick = (item: RemixTrackItem) => {
     if (item.mode === null) {
@@ -494,38 +489,6 @@ export function RecipeRemix3DScrollStage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* 3D Studio Render vs Live img2threejs Interactive 3D Model Toggle */}
-          <div
-            role="group"
-            aria-label="3D Presentation Mode"
-            className="inline-flex items-center rounded-full border border-[#d3d4c8] bg-[#f1f3e6] p-0.5 text-[11px]"
-          >
-            <button
-              type="button"
-              onClick={() => setView3DMode("render")}
-              className={`btn-press inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold transition-colors ${
-                view3DMode === "render"
-                  ? "bg-[#3f6212] text-[#fcfcfd]"
-                  : "text-[#4d4c4c] hover:text-[#1e1612]"
-              }`}
-            >
-              <Layers className="h-3 w-3" />
-              3D Studio Image
-            </button>
-            <button
-              type="button"
-              onClick={() => setView3DMode("model")}
-              className={`btn-press inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold transition-colors ${
-                view3DMode === "model"
-                  ? "bg-[#3f6212] text-[#fcfcfd]"
-                  : "text-[#4d4c4c] hover:text-[#1e1612]"
-              }`}
-            >
-              <Box className="h-3 w-3" />
-              3D Model (img2threejs)
-            </button>
-          </div>
-
           <span className="font-mono text-xs font-semibold text-[#1e1612] tabular-nums">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}
             {String(safeRecipes.length).padStart(2, "0")}
@@ -672,34 +635,19 @@ export function RecipeRemix3DScrollStage({
                   isCenter ? "cursor-default" : "cursor-pointer"
                 }`}
               >
-                {/* Center Spotlight: Either Crisp 3D Studio Render or Live Orbitable Three.js Model */}
-                {isCenter && view3DMode === "model" ? (
-                  <div className="relative h-[240px] w-[260px] sm:h-[300px] sm:w-[330px]">
-                    <ProceduralDishThreeCanvas
-                      archetype={activeArchetype}
-                      title={selectedRecipe.title}
-                      customPhotoDataUrl={
-                        selectedRecipe.hero_image_url &&
-                        (selectedRecipe.hero_image_url.startsWith("data:image/") ||
-                          /^https?:\/\//i.test(selectedRecipe.hero_image_url))
-                          ? selectedRecipe.hero_image_url
-                          : null
-                      }
-                    />
-                  </div>
-                ) : (
-                  <motion.div
-                    animate={
-                      isCenter
-                        ? {
-                            rotateX: pointerTilt.rx,
-                            rotateY: pointerTilt.ry,
-                          }
-                        : { rotateX: 0, rotateY: 0 }
-                    }
-                    transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                    className="relative flex h-[215px] w-[215px] items-center justify-center sm:h-[276px] sm:w-[276px]"
-                  >
+                {/* Center Spotlight: Crisp 3D Studio Render */}
+                <motion.div
+                  animate={
+                    isCenter
+                      ? {
+                          rotateX: pointerTilt.rx,
+                          rotateY: pointerTilt.ry,
+                        }
+                      : { rotateX: 0, rotateY: 0 }
+                  }
+                  transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                  className="relative flex h-[215px] w-[215px] items-center justify-center sm:h-[276px] sm:w-[276px]"
+                >
                     {isCenter ? (
                       <MorphingDialog
                         transition={{
@@ -798,8 +746,7 @@ export function RecipeRemix3DScrollStage({
                         Added to 3D
                       </span>
                     )}
-                  </motion.div>
-                )}
+                </motion.div>
 
                 {/* Side Dish Peek Label (Clickable to bring into spotlight) */}
                 {!isCenter && Math.abs(offset) === 1 && (
