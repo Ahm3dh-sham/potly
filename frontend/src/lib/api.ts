@@ -37,6 +37,46 @@ function ensureExternalApi(): void {
   }
 }
 
+export const RECIPE_3D_IMAGE_BY_ID: Record<string, string> = {
+  "11111111-1111-4111-8111-111111111101": "/recipes/paneer-tikka-3d.jpg",
+  "11111111-1111-4111-8111-111111111102": "/recipes/dal-palak-thali-3d.jpg",
+  "11111111-1111-4111-8111-111111111103": "/recipes/mysore-masala-dosa-3d.jpg",
+  "11111111-1111-4111-8111-111111111104": "/recipes/tandoori-chicken-bowl-3d.jpg",
+  "11111111-1111-4111-8111-111111111105": "/recipes/malabar-prawn-appam-3d.jpg",
+  "11111111-1111-4111-8111-111111111106": "/recipes/mumbai-pav-bhaji-3d.jpg",
+  "11111111-1111-4111-8111-111111111107": "/recipes/kolkata-kosha-pulao-3d.jpg",
+};
+
+export function getRecipe3DImage(recipe: Recipe): string {
+  if (recipe.hero_image_url) return recipe.hero_image_url;
+  const byId = RECIPE_3D_IMAGE_BY_ID[recipe.id];
+  if (byId) return byId;
+  if (recipe.parent_recipe_id) {
+    const byParent = RECIPE_3D_IMAGE_BY_ID[recipe.parent_recipe_id];
+    if (byParent) return byParent;
+  }
+  const text = `${recipe.title} ${recipe.cuisine}`.toLowerCase();
+  if (/(dosa|idli|sambar|tiffin|south)/i.test(text)) {
+    return "/recipes/mysore-masala-dosa-3d.jpg";
+  }
+  if (/(prawn|fish|kerala|malabar|appam|coastal)/i.test(text)) {
+    return "/recipes/malabar-prawn-appam-3d.jpg";
+  }
+  if (/(pav|bhaji|mumbai|west|street|vada)/i.test(text)) {
+    return "/recipes/mumbai-pav-bhaji-3d.jpg";
+  }
+  if (/(bengali|east|kolkata|pulao|kosha|soya)/i.test(text)) {
+    return "/recipes/kolkata-kosha-pulao-3d.jpg";
+  }
+  if (/(chicken|tikka|tandoori|quinoa|air-fryer)/i.test(text)) {
+    return "/recipes/tandoori-chicken-bowl-3d.jpg";
+  }
+  if (/(dal|palak|thali|rice|moong|spinach)/i.test(text)) {
+    return "/recipes/dal-palak-thali-3d.jpg";
+  }
+  return "/recipes/paneer-tikka-3d.jpg";
+}
+
 export const FALLBACK_RECIPES: Recipe[] = [
   {
     id: "11111111-1111-4111-8111-111111111101",
@@ -52,7 +92,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 20,
     servings: 3,
     estimated_total_cost_inr: 265,
-    hero_image_url: null,
+    hero_image_url: "/recipes/paneer-tikka-3d.jpg",
     likes_count: 642,
     forks_count: 94,
     author_name: "Chef Ranveer Kapoor",
@@ -320,7 +360,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 18,
     servings: 3,
     estimated_total_cost_inr: 165,
-    hero_image_url: null,
+    hero_image_url: "/recipes/dal-palak-thali-3d.jpg",
     likes_count: 518,
     forks_count: 72,
     author_name: "Chef Meera Joshi",
@@ -470,7 +510,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 15,
     servings: 3,
     estimated_total_cost_inr: 140,
-    hero_image_url: null,
+    hero_image_url: "/recipes/mysore-masala-dosa-3d.jpg",
     likes_count: 734,
     forks_count: 112,
     author_name: "Chef Arvind Narayan",
@@ -660,7 +700,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 12,
     servings: 2,
     estimated_total_cost_inr: 240,
-    hero_image_url: null,
+    hero_image_url: "/recipes/tandoori-chicken-bowl-3d.jpg",
     likes_count: 891,
     forks_count: 148,
     author_name: "Chef Vikramaditya Sen",
@@ -845,7 +885,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 15,
     servings: 3,
     estimated_total_cost_inr: 310,
-    hero_image_url: null,
+    hero_image_url: "/recipes/malabar-prawn-appam-3d.jpg",
     likes_count: 589,
     forks_count: 68,
     author_name: "Chef Deepa Menon",
@@ -1033,7 +1073,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 12,
     servings: 3,
     estimated_total_cost_inr: 155,
-    hero_image_url: null,
+    hero_image_url: "/recipes/mumbai-pav-bhaji-3d.jpg",
     likes_count: 678,
     forks_count: 89,
     author_name: "Chef Siddharth Kulkarni",
@@ -1222,7 +1262,7 @@ export const FALLBACK_RECIPES: Recipe[] = [
     cook_time_minutes: 18,
     servings: 3,
     estimated_total_cost_inr: 175,
-    hero_image_url: null,
+    hero_image_url: "/recipes/kolkata-kosha-pulao-3d.jpg",
     likes_count: 512,
     forks_count: 64,
     author_name: "Chef Sohini Chatterjee",

@@ -18,6 +18,7 @@ import { IngredientList } from "@/components/recipes/IngredientList";
 import { OcrImporterModal } from "@/components/recipes/OcrImporterModal";
 import { ParallelTimeline } from "@/components/recipes/ParallelTimeline";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { RecipeRemix3DScrollStage } from "@/components/recipes/RecipeRemix3DScrollStage";
 import { SocialCookbooksView } from "@/components/social/SocialCookbooksView";
 import { KineticPrepTimeline } from "@/components/timeline/KineticPrepTimeline";
 import { useParallelTimers } from "@/hooks/useParallelTimers";
@@ -110,8 +111,9 @@ export default function MiseFoodWorkspacePage() {
   const handleOneClickAiRemix = async (mode: RemixMode) => {
     setActiveRemixLoading(mode);
     try {
+      const targetRecipeId = selectedRecipe.parent_recipe_id ?? selectedRecipe.id;
       const remixed = await remixRecipeWithAI(
-        selectedRecipe.id,
+        targetRecipeId,
         mode,
         undefined,
         currentServings
@@ -186,7 +188,24 @@ export default function MiseFoodWorkspacePage() {
       }}
     >
       {activeTab === "hub" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="space-y-6">
+          <RecipeRemix3DScrollStage
+            recipes={recipes}
+            selectedRecipe={selectedRecipe}
+            currentServings={currentServings}
+            unitSystem={unitSystem}
+            activeRemixLoading={activeRemixLoading}
+            onSelectRecipe={handleSelectRecipe}
+            onTriggerRemix={(mode) => {
+              void handleOneClickAiRemix(mode);
+            }}
+            onStartCooking={(r) => {
+              handleSelectRecipe(r);
+              setActiveTab("sous-chef");
+            }}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Recipe Library & Search */}
           <div className="lg:col-span-4 space-y-4">
             <form
@@ -368,6 +387,7 @@ export default function MiseFoodWorkspacePage() {
               }}
             />
           </div>
+        </div>
         </div>
       )}
 

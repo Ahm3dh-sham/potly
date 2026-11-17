@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Clock, GitFork, Heart, Utensils } from "lucide-react";
+import { getRecipe3DImage } from "@/lib/api";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeCardProps {
@@ -56,12 +57,24 @@ export function RecipeCard({
         </span>
       </div>
 
-      <h3 className="font-semibold text-base text-[#000000] group-hover:text-[#3f6212] transition-colors line-clamp-2">
-        {recipe.title}
-      </h3>
-      <p className="text-xs text-[#333333] mt-1 line-clamp-2 leading-relaxed">
-        {recipe.description}
-      </p>
+      <div className="flex items-start gap-3">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[8px] border border-[#d3d4c8] bg-[#f1f3e6] p-1">
+          <img
+            src={getRecipe3DImage(recipe)}
+            alt={recipe.title}
+            loading="lazy"
+            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-base text-[#000000] group-hover:text-[#3f6212] transition-colors line-clamp-2">
+            {recipe.title}
+          </h3>
+          <p className="text-xs text-[#333333] mt-1 line-clamp-2 leading-relaxed">
+            {recipe.description}
+          </p>
+        </div>
+      </div>
 
       {recipe.remix_note && (
         <div className="mt-2.5 px-2.5 py-1 rounded-[6px] bg-[#f1f3e6] border border-[#d3d4c8] text-[11px] text-[#3f6212] font-medium flex items-center gap-1.5">
