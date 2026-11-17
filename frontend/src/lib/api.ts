@@ -1,3 +1,4 @@
+import { formatIngredientForDisplay } from "@/lib/unitConverter";
 import type {
   Community,
   Cookbook,
@@ -17,6 +18,7 @@ import type {
   SousChefVoiceQueryResponse,
   StorageLocation,
   AisleCategory,
+  UnitSystem,
 } from "@/types/recipe";
 
 const API_BASE =
@@ -84,13 +86,16 @@ export function getRecipeArchetype(recipe: Recipe): DishArchetype {
     if (byParent) return byParent;
   }
   const text = `${recipe.title} ${recipe.cuisine} ${(recipe.tags ?? []).join(" ")}`.toLowerCase();
+  if (/(mutton|lamb|goat|kulambu|kuzhambu|chettinad|rogan josh|keema)/i.test(text)) {
+    return "uruli";
+  }
   if (/(paneer|kadhai|makhani)/i.test(text)) {
     return "kadhai";
   }
   if (/(dosa|idli|sambar|tiffin|south|uttapam|vada)/i.test(text)) {
     return "dosa";
   }
-  if (/(prawn|fish|kerala|malabar|appam|coastal|chemmeen|seafood)/i.test(text)) {
+  if (/(prawn|fish|meen|kerala|malabar|appam|coastal|chemmeen|seafood)/i.test(text)) {
     return "uruli";
   }
   if (/(pav|bhaji|mumbai|west|street|chole|chaat)/i.test(text)) {
@@ -115,6 +120,10 @@ export function getRecipe3DImage(recipe: Recipe): string {
   if (recipe.parent_recipe_id) {
     const byParent = RECIPE_3D_IMAGE_BY_ID[recipe.parent_recipe_id];
     if (byParent) return byParent;
+  }
+  const text = `${recipe.title} ${recipe.cuisine} ${(recipe.tags ?? []).join(" ")}`.toLowerCase();
+  if (/(mutton|lamb|goat|kulambu|kuzhambu|chettinad|rogan josh|keema|nihari)/i.test(text)) {
+    return "/recipes/mutton-kulambu-3d.jpg";
   }
   return ARCHETYPE_3D_IMAGE[getRecipeArchetype(recipe)];
 }
@@ -1803,19 +1812,255 @@ export async function mergeMultiRecipeTimeline(
   };
 }
 
-export async function querySousChefVoice(
-  payload: SousChefVoiceQueryRequest
-): Promise<SousChefVoiceQueryResponse> {
-  ensureExternalApi();
-  const res = await fetch(`${API_BASE}/sous-chef/voice-query`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error(`Sous chef voice query failed (${res.status})`);
+export interface SousChefLocalContext {
+  unitSystem?: UnitSystem;
+  scaleFactor?: number;
+  stepTitle?: string;
+  stepDurationSeconds?: number;
+  sensoryCue?: string | null;
+  equipment?: string[];
+}
+
+function findMatchingIngredient(
+  query: string,
+  ingredients: NormalizedIngredient[]
+): NormalizedIngredient | undefined {
+  const stopWords = new Set([
+    "how",
+    "much",
+    "many",
+    "what",
+    "can",
+    "use",
+    "for",
+    "substitute",
+    "replace",
+    "swap",
+    "instead",
+    "with",
+    "need",
+    "the",
+    "do",
+    "of",
+    "is",
+    "in",
+  ]);
+  const tokens = query
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 3 && !stopWords.has(w));
+  if (tokens.length === 0) return ingredients[0];
+
+  let best: { ing: NormalizedIngredient; score: number } | null = null;
+  for (const ing of ingredients) {
+    const ingLower = ing.name.toLowerCase();
+    let score = 0;
+    for (const tok of tokens) {
+      if (ingLower.includes(tok)) score += tok.length;
+    }
+    if (score > 0 && (!best || score > best.score)) {
+      best = { ing, score };
+    }
   }
-  return (await res.json()) as SousChefVoiceQueryResponse;
+  return best?.ing;
+}
+
+function getSmartSubstitutionAdvice(ingredientName: string): string {
+  const lower = ingredientName.toLowerCase();
+  if (/cream|malai/.test(lower)) {
+    return `Swap ${ingredientName} 1:1 with soaked cashew paste (15g cashews blended smooth with 2 tbsp warm water) or whisked hung curd for the same silky finish.`;
+  }
+  if (/paneer/.test(lower)) {
+    return `Swap ${ingredientName} 1:1 with pressed extra-firm organic tofu marinated in lemon juice, turmeric, and salt, or grilled halloumi.`;
+  }
+  if (/ghee|butter|makkhan/.test(lower)) {
+    return `Swap ${ingredientName} with cold-pressed groundnut oil or virgin coconut oil (for South Indian dishes), adding a pinch of jeera for aroma.`;
+  }
+  if (/curd|dahi|yogurt/.test(lower)) {
+    return `Swap ${ingredientName} with thick coconut yogurt blended with 1 tsp lemon juice, or whisked buttermilk at lower heat so it won't curdle.`;
+  }
+  if (/mutton|lamb|goat/.test(lower)) {
+    return `Swap ${ingredientName} with tender young jackfruit (kathal) or bone-in chicken thighs (reduce pressure cooking from 5 whistles to 2 whistles).`;
+  }
+  if (/shallot|onion|garlic/.test(lower)) {
+    return `For a Jain or zero-allium swap, replace ${ingredientName} with 1/2 tsp compounded asafoetida (hing), 1 tbsp grated ginger, and toasted fennel powder.`;
+  }
+  if (/coconut/.test(lower)) {
+    return `Swap ${ingredientName} with soaked and blended white sesame + cashew paste or 1/3 cup heavy almond milk for nutty body.`;
+  }
+  if (/tamarind|puli/.test(lower)) {
+    return `Swap ${ingredientName} with kokum extract, 1.5 tsp amchoor (dry mango powder), or fresh lime juice stirred in off the heat.`;
+  }
+  return `If you're out of ${ingredientName}, try doubling the aromatics in Step ${1} or pairing a similar texture (${ingredientName.includes("oil") ? "cold-pressed sesame oil" : "soaked cashew or mild broth base"}) without altering cook times.`;
+}
+
+export async function querySousChefVoice(
+  payload: SousChefVoiceQueryRequest,
+  localContext?: SousChefLocalContext
+): Promise<SousChefVoiceQueryResponse> {
+  if (shouldTryExternalApi()) {
+    try {
+      const res = await fetch(`${API_BASE}/sous-chef/voice-query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        return (await res.json()) as SousChefVoiceQueryResponse;
+      }
+    } catch {
+      // fall through to intelligent built-in kitchen Sous Chef engine
+    }
+  }
+
+  const transcript = payload.user_transcript.trim();
+  const lower = transcript.toLowerCase();
+  const unitSystem = localContext?.unitSystem ?? "indian";
+  const scaleFactor = localContext?.scaleFactor ?? 1;
+
+  // 1. Step navigation commands
+  if (/\b(next|done|finished|move on|skip|forward)\b/.test(lower)) {
+    return {
+      spoken_reply: `Moving ahead to the next step for ${payload.recipe_title}.`,
+      action_command: "NEXT_STEP",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+  if (/\b(prev|previous|back|last step|go back)\b/.test(lower)) {
+    return {
+      spoken_reply: `Going back one step in ${payload.recipe_title}.`,
+      action_command: "PREV_STEP",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+  if (/\b(repeat|again|read step|what step|current step)\b/.test(lower)) {
+    const cueSuffix = localContext?.sensoryCue
+      ? ` Look for: ${localContext.sensoryCue}.`
+      : "";
+    return {
+      spoken_reply: `Step ${payload.current_step_number}${localContext?.stepTitle ? ` (${localContext.stepTitle})` : ""}: ${payload.current_instruction}${cueSuffix}`,
+      action_command: "REPEAT_STEP",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+
+  // 2. Pause / Stop Timers
+  if (/\b(pause|stop timer|halt timers?)\b/.test(lower)) {
+    return {
+      spoken_reply:
+        payload.active_timers.length > 0
+          ? `Paused ${payload.active_timers.length} active timer${payload.active_timers.length === 1 ? "" : "s"}.`
+          : "No active timers are currently running.",
+      action_command: "PAUSE_TIMERS",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+
+  // 3. Start / Set Timer with smart natural-language duration extraction
+  if (/\b(timer|alarm|countdown|remind)\b/.test(lower)) {
+    const durMatch = lower.match(/(\d+(?:\.\d+)?)\s*(min(?:ute)?s?|sec(?:ond)?s?|hrs?|hours?)/i);
+    let seconds = localContext?.stepDurationSeconds ?? 300;
+    if (durMatch?.[1]) {
+      const n = Number(durMatch[1]);
+      const unitStr = durMatch[2]?.toLowerCase() ?? "min";
+      if (unitStr.startsWith("sec")) {
+        seconds = Math.max(10, Math.round(n));
+      } else if (unitStr.startsWith("hr") || unitStr.startsWith("hour")) {
+        seconds = Math.max(60, Math.round(n * 3600));
+      } else {
+        seconds = Math.max(30, Math.round(n * 60));
+      }
+    }
+    const mins = Math.round(seconds / 60);
+    const label = durMatch
+      ? `${mins >= 1 ? `${mins}m` : `${seconds}s`} Sous-Chef Timer`
+      : `Step ${payload.current_step_number} Timer`;
+    return {
+      spoken_reply: `Started "${label}" for ${mins >= 1 ? `${mins} minute${mins === 1 ? "" : "s"}` : `${seconds} seconds`}.`,
+      action_command: "START_TIMER",
+      timer_seconds: seconds,
+      timer_label: label,
+    };
+  }
+
+  // 4. Ingredient Substitution Question
+  if (/\b(substitute|substitution|replace|swap|instead|alternative|out of)\b/.test(lower)) {
+    const matched = findMatchingIngredient(lower, payload.ingredients);
+    if (matched) {
+      return {
+        spoken_reply: getSmartSubstitutionAdvice(matched.name),
+        action_command: "NONE",
+        timer_seconds: null,
+        timer_label: null,
+      };
+    }
+    const firstNonSpice = payload.ingredients[0]?.name ?? "that ingredient";
+    return {
+      spoken_reply: getSmartSubstitutionAdvice(firstNonSpice),
+      action_command: "NONE",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+
+  // 5. Ingredient Quantity / Measurement Question
+  if (/\b(how much|how many|quantity|amount|measure|katori|grams?)\b/.test(lower) || findMatchingIngredient(lower, payload.ingredients)) {
+    const matched = findMatchingIngredient(lower, payload.ingredients);
+    if (matched) {
+      const formatted = formatIngredientForDisplay(matched, unitSystem, scaleFactor);
+      const prepNote = matched.preparation_note ? ` (${matched.preparation_note})` : "";
+      return {
+        spoken_reply: `Use ${formatted.quantity} ${formatted.unit} of ${matched.name}${prepNote} for ${payload.recipe_title}.`,
+        action_command: "NONE",
+        timer_seconds: null,
+        timer_label: null,
+      };
+    }
+  }
+
+  // 6. Sensory Cue / Timing / Equipment Status Question
+  if (/\b(how long|minutes|ready|done|clue|look for|flame|heat|pan|pot)\b/.test(lower)) {
+    const mins = localContext?.stepDurationSeconds
+      ? `${Math.max(1, Math.round(localContext.stepDurationSeconds / 60))} minutes`
+      : "a few minutes";
+    const equip = localContext?.equipment?.length
+      ? ` using ${localContext.equipment.join(", ")}`
+      : "";
+    const cue = localContext?.sensoryCue
+      ? ` You'll know it's ready by: ${localContext.sensoryCue}.`
+      : "";
+    return {
+      spoken_reply: `For Step ${payload.current_step_number}, cook for about ${mins}${equip}.${cue}`,
+      action_command: "NONE",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+
+  // 7. Timer check
+  if (/\btimers?\b/.test(lower) && payload.active_timers.length > 0) {
+    return {
+      spoken_reply: `Active timers: ${payload.active_timers.join("; ")}.`,
+      action_command: "NONE",
+      timer_seconds: null,
+      timer_label: null,
+    };
+  }
+
+  // 8. Clear contextual fallback reading current step + sensory guidance
+  const cuePart = localContext?.sensoryCue
+    ? ` Watch for: ${localContext.sensoryCue}.`
+    : "";
+  return {
+    spoken_reply: `Step ${payload.current_step_number}: ${payload.current_instruction}${cuePart}`,
+    action_command: "NONE",
+    timer_seconds: null,
+    timer_label: null,
+  };
 }
 
 export async function generateSmartMealPlan(

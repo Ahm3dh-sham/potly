@@ -740,13 +740,25 @@ export function ProceduralDishThreeCanvas({
     const dishGroup = buildArchetypeDish(archetype);
     scene.add(dishGroup);
 
-    // Optional uploaded user dish photo mapped onto a 3D porcelain studio medallion behind the vessel
+    // Optional uploaded user photo or video thumbnail mapped onto a 3D porcelain studio medallion
     let loadedTexture: THREE.Texture | null = null;
-    if (customPhotoDataUrl && customPhotoDataUrl.startsWith("data:image/")) {
+    if (
+      customPhotoDataUrl &&
+      (customPhotoDataUrl.startsWith("data:image/") ||
+        /^https?:\/\//i.test(customPhotoDataUrl))
+    ) {
       const texLoader = new THREE.TextureLoader();
-      loadedTexture = texLoader.load(customPhotoDataUrl, () => {
-        renderer?.render(scene, camera);
-      });
+      texLoader.setCrossOrigin("anonymous");
+      loadedTexture = texLoader.load(
+        customPhotoDataUrl,
+        () => {
+          renderer?.render(scene, camera);
+        },
+        undefined,
+        () => {
+          // Ignore CORS load errors cleanly without crashing 3D stage
+        }
+      );
       loadedTexture.colorSpace = THREE.SRGBColorSpace;
 
       const medallionGroup = new THREE.Group();

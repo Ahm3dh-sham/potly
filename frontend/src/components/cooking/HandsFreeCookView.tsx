@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,6 +9,7 @@ import {
   Pause,
   Play,
   Send,
+  Square,
   Sun,
   Timer,
   Trash2,
@@ -20,7 +21,12 @@ import {
   type WakeLockSentinelLike,
 } from "@/lib/speech";
 import { formatIngredientForDisplay } from "@/lib/unitConverter";
-import type { ActiveCookingTimer, Recipe, UnitSystem } from "@/types/recipe";
+import type {
+  ActiveCookingTimer,
+  Recipe,
+  TimelineTrack,
+  UnitSystem,
+} from "@/types/recipe";
 
 interface HandsFreeCookViewProps {
   recipe: Recipe;
@@ -37,10 +43,23 @@ interface HandsFreeCookViewProps {
   onPauseAllTimers: () => void;
 }
 
+const TRACK_LABELS: Record<TimelineTrack, string> = {
+  prep: "Prep",
+  active_cook: "Active Heat",
+  passive_wait: "Simmer / Rest",
+  plating: "Finish & Serve",
+};
+
 function formatSeconds(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function shortIngLabel(name: string): string {
+  const stripped = name.split("(")[0]?.split("&")[0]?.trim() ?? name;
+  const words = stripped.split(/\s+/);
+  return words.slice(0, 3).join(" ");
 }
 
 export function HandsFreeCookView({
@@ -55,9 +74,9 @@ export function HandsFreeCookView({
 }: HandsFreeCookViewProps) {
   const [stepIdx, setStepIdx] = useState(0);
   const [manualQuery, setManualQuery] = useState("");
-  const [wakeLockActive, setWakeLockActive] = useState(true);
+  const [wakeLockActive, setWakeLockActive] = useState(false);
 
-  // Bug Fix #1: Reset stepIdx to 0 whenever the active recipe changes
+  // Reset stepIdx to 0 whenever the active recipe changes
   useEffect(() => {
     setStepIdx(0);
   }, [recipe.id]);
@@ -83,7 +102,7 @@ export function HandsFreeCookView({
     let sentinel: WakeLockSentinelLike | null = null;
     void (async () => {
       sentinel = await requestScreenWakeLock();
-      setWakeLockActive(true);
+      setWakeLockActive(Boolean(sentinel));
     })();
     return () => {
       void sentinel?.release();
@@ -115,10 +134,13 @@ export function HandsFreeCookView({
     assistantMessage,
     toggleListening,
     readCurrentStepAloud,
+    stopSpeakingAloud,
     simulateVoiceCommand,
   } = useVoiceSousChef({
     recipe,
     currentStepIndex: safeStepIdx,
+    unitSystem,
+    scaleFactor,
     timers,
     onNextStep: handleNextStep,
     onPrevStep: handlePrevStep,
@@ -126,40 +148,63 @@ export function HandsFreeCookView({
     onPauseTimers: onPauseAllTimers,
   });
 
+  const quickCommands = useMemo(() => {
+    const ing1 = recipe.ingredients[0]?.name
+      ? shortIngLabel(recipe.ingredients[0].name)
+      : "spices";
+    const ing2 = recipe.ingredients[1]?.name
+      ? shortIngLabel(recipe.ingredients[1].name)
+      : ing1;
+    const stepMins = Math.max(
+      1,
+      Math.round((currentStep?.duration_seconds ?? 300) / 60)
+    );
+    return [
+      "Next step",
+      "Repeat",
+      `How much ${ing1}?`,
+      `Set a timer for ${stepMins} minutes`,
+      `What can I substitute for ${ing2}?`,
+    ];
+  }, [currentStep?.duration_seconds, recipe.ingredients]);
+
   if (!currentStep) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       {/* Main Step Stage */}
-      <div className="lg:col-span-8 space-y-5">
-        <div className="rounded-[28px] bg-white border border-zinc-200/80 p-6 sm:p-8 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-[#C85A32]">
+      <div className="space-y-5 lg:col-span-8">
+        <div className="space-y-6 rounded-[12px] border border-[#d3d4c8] bg-[#e9eade] p-5 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d3d4c8] pb-4">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-[#3f6212] px-2.5 py-0.5 text-[11px] font-semibold text-[#fcfcfd]">
+                  {TRACK_LABELS[currentStep.track]}
+                </span>
+                <span className="text-xs font-semibold text-[#C44D28]">
                   {recipe.title}
                 </span>
                 {wakeLockActive && (
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 flex items-center gap-1">
-                    <Sun className="h-3 w-3" />
-                    Screen stays awake
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-2.5 py-0.5 text-[10px] font-medium text-[#4d4c4c]">
+                    <Sun className="h-3 w-3 text-[#3f6212]" />
+                    Screen awake
                   </span>
                 )}
               </div>
-              <h2 className="font-switzer text-2xl sm:text-3xl font-medium text-zinc-950 mt-1">
+              <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[#1e1612] sm:text-3xl">
                 Step {currentStep.step_number} of {totalSteps}:{" "}
                 {currentStep.title}
               </h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={toggleListening}
-                className={`px-4 py-2.5 rounded-full font-medium text-xs sm:text-sm flex items-center gap-2 transition-transform duration-150 ease-emil-out active:scale-[0.97] ${
+                className={`btn-press flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold sm:text-sm ${
                   isListening
-                    ? "bg-[#C85A32] text-white shadow-sm"
-                    : "bg-zinc-950 text-white hover:bg-zinc-800"
+                    ? "bg-[#C44D28] text-[#fcfcfd] shadow-sm"
+                    : "bg-[#3f6212] text-[#fcfcfd] hover:bg-[#33500e]"
                 }`}
               >
                 {isListening ? (
@@ -175,14 +220,25 @@ export function HandsFreeCookView({
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={readCurrentStepAloud}
-                className="px-4 py-2.5 rounded-full bg-[#F6F6F4] hover:bg-zinc-200/70 text-zinc-900 border border-zinc-200 text-xs sm:text-sm font-medium flex items-center gap-1.5 active:scale-[0.97]"
-              >
-                <Volume2 className="h-4 w-4" />
-                <span>Read Step</span>
-              </button>
+              {isSpeaking ? (
+                <button
+                  type="button"
+                  onClick={stopSpeakingAloud}
+                  className="btn-press flex items-center gap-1.5 rounded-full border border-[#C44D28] bg-[#fdf1ed] px-4 py-2.5 text-xs font-semibold text-[#C44D28] sm:text-sm"
+                >
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                  <span>Stop Voice</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={readCurrentStepAloud}
+                  className="btn-press flex items-center gap-1.5 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-4 py-2.5 text-xs font-semibold text-[#1e1612] hover:border-[#3f6212] sm:text-sm"
+                >
+                  <Volume2 className="h-4 w-4 text-[#3f6212]" />
+                  <span>Read Step</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -195,10 +251,10 @@ export function HandsFreeCookView({
                 onClick={() => setStepIdx(idx)}
                 className={`h-2 rounded-full transition-colors ${
                   idx === safeStepIdx
-                    ? "bg-[#C85A32]"
+                    ? "bg-[#C44D28]"
                     : idx < safeStepIdx
-                      ? "bg-zinc-900"
-                      : "bg-zinc-200"
+                      ? "bg-[#3f6212]"
+                      : "bg-[#d3d4c8]"
                 }`}
                 aria-label={`Jump to step ${s.step_number}`}
               />
@@ -206,14 +262,14 @@ export function HandsFreeCookView({
           </div>
 
           {/* Large Instruction Display */}
-          <div className="p-6 sm:p-8 rounded-2xl bg-[#F6F6F4] border border-zinc-200/80 space-y-4">
-            <p className="font-switzer text-xl sm:text-2xl text-zinc-950 font-normal leading-relaxed">
+          <div className="space-y-4 rounded-[10px] border border-[#d3d4c8] bg-[#f1f3e6] p-5 sm:p-7">
+            <p className="text-lg font-medium leading-relaxed text-[#1e1612] sm:text-2xl">
               {currentStep.instruction}
             </p>
 
             {currentStep.sensory_cue && (
-              <div className="p-3.5 rounded-xl bg-[#FDF6EF] border border-[#EED9C4] text-sm text-[#9A4220]">
-                <strong className="font-medium">What to look for:</strong>{" "}
+              <div className="rounded-[8px] border border-[#EED9C4] bg-[#FDF6EF] p-3.5 text-sm text-[#9A4220]">
+                <strong className="font-semibold">What to look for:</strong>{" "}
                 {currentStep.sensory_cue}
               </div>
             )}
@@ -230,7 +286,7 @@ export function HandsFreeCookView({
                       currentStep.step_number
                     )
                   }
-                  className="px-4 py-2 rounded-full bg-zinc-950 text-white font-medium text-xs sm:text-sm flex items-center gap-2 active:scale-[0.97]"
+                  className="btn-press flex items-center gap-2 rounded-full bg-[#3f6212] px-4 py-2 text-xs font-semibold text-[#fcfcfd] hover:bg-[#33500e] sm:text-sm"
                 >
                   <Timer className="h-4 w-4" />
                   <span>
@@ -244,7 +300,7 @@ export function HandsFreeCookView({
               {currentStep.equipment.map((eq) => (
                 <span
                   key={eq}
-                  className="px-3 py-1.5 rounded-full bg-white border border-zinc-200 text-xs text-zinc-600"
+                  className="rounded-full border border-[#d3d4c8] bg-[#e9eade] px-3 py-1.5 text-xs font-medium text-[#333333]"
                 >
                   {eq}
                 </span>
@@ -253,18 +309,18 @@ export function HandsFreeCookView({
           </div>
 
           {/* Step Navigation Controls */}
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-1">
             <button
               type="button"
               disabled={safeStepIdx === 0}
               onClick={handlePrevStep}
-              className="px-4 py-2.5 rounded-full bg-[#F6F6F4] hover:bg-zinc-200/70 disabled:opacity-40 text-xs sm:text-sm font-medium text-zinc-900 flex items-center gap-2 border border-zinc-200 active:scale-[0.97]"
+              className="btn-press flex items-center gap-2 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-4 py-2.5 text-xs font-semibold text-[#1e1612] hover:border-[#3f6212] disabled:opacity-40 sm:text-sm"
             >
               <ChevronLeft className="h-4 w-4" />
               <span>Previous</span>
             </button>
 
-            <span className="text-xs text-zinc-400">
+            <span className="hidden text-xs text-[#4d4c4c] sm:inline">
               Use ← / → arrow keys or voice
             </span>
 
@@ -272,7 +328,7 @@ export function HandsFreeCookView({
               type="button"
               disabled={safeStepIdx >= totalSteps - 1}
               onClick={handleNextStep}
-              className="px-5 py-2.5 rounded-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 text-white font-medium text-xs sm:text-sm flex items-center gap-2 active:scale-[0.97]"
+              className="btn-press flex items-center gap-2 rounded-full bg-[#3f6212] px-5 py-2.5 text-xs font-semibold text-[#fcfcfd] hover:bg-[#33500e] disabled:opacity-40 sm:text-sm"
             >
               <span>Next Step</span>
               <ChevronRight className="h-4 w-4" />
@@ -281,45 +337,39 @@ export function HandsFreeCookView({
         </div>
 
         {/* Ask Sous Chef Bar */}
-        <div className="rounded-[28px] bg-white border border-zinc-200/80 p-6 space-y-4">
+        <div className="space-y-4 rounded-[12px] border border-[#d3d4c8] bg-[#e9eade] p-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-switzer text-base font-medium text-zinc-950">
+            <h3 className="text-base font-semibold text-[#1e1612]">
               Ask Sous Chef
             </h3>
             {isSpeaking && (
-              <span className="text-xs text-[#C85A32] font-medium animate-pulse">
+              <span className="animate-pulse text-xs font-semibold text-[#C44D28]">
                 Speaking...
               </span>
             )}
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#F6F6F4] border border-zinc-200/80 space-y-1.5">
+          <div className="space-y-1.5 rounded-[10px] border border-[#d3d4c8] bg-[#f1f3e6] p-4">
             {lastTranscript && (
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-[#4d4c4c]">
                 You asked:{" "}
-                <span className="text-zinc-900 font-medium">
+                <span className="font-semibold text-[#1e1612]">
                   &ldquo;{lastTranscript}&rdquo;
                 </span>
               </p>
             )}
-            <p className="text-sm text-zinc-900 font-medium">
+            <p className="text-sm font-medium leading-relaxed text-[#1e1612]">
               {assistantMessage}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            {[
-              "Next step",
-              "Repeat",
-              "How much cumin?",
-              "Set a timer for 8 minutes",
-              "What can I substitute for heavy cream?",
-            ].map((cmd) => (
+            {quickCommands.map((cmd) => (
               <button
                 key={cmd}
                 type="button"
                 onClick={() => void simulateVoiceCommand(cmd)}
-                className="px-3 py-1 rounded-full bg-[#F6F6F4] hover:bg-zinc-200/70 border border-zinc-200 text-xs text-zinc-700 active:scale-[0.97]"
+                className="btn-press rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-3 py-1 text-xs font-medium text-[#1e1612] hover:border-[#3f6212]"
               >
                 &ldquo;{cmd}&rdquo;
               </button>
@@ -339,12 +389,12 @@ export function HandsFreeCookView({
               type="text"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
-              placeholder="Ask a question about this step or ingredient..."
-              className="flex-1 rounded-full bg-[#F6F6F4] border border-zinc-200 px-4 py-2.5 text-xs text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
+              placeholder={`Ask about ${shortIngLabel(recipe.ingredients[0]?.name ?? "an ingredient")}, timers, or substitutes...`}
+              className="flex-1 rounded-full border border-[#d3d4c8] bg-[#f1f3e6] px-4 py-2.5 text-xs text-[#000000] placeholder:text-[#4d4c4c] focus:border-[#3f6212] focus:outline-none"
             />
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-full bg-zinc-950 text-white font-medium text-xs flex items-center gap-1.5 active:scale-[0.97]"
+              className="btn-press flex items-center gap-1.5 rounded-full bg-[#3f6212] px-4 py-2.5 text-xs font-semibold text-[#fcfcfd] hover:bg-[#33500e]"
             >
               <Send className="h-3.5 w-3.5" />
               <span>Ask</span>
@@ -354,18 +404,18 @@ export function HandsFreeCookView({
       </div>
 
       {/* Right Column: Active Timers & Scaled Ingredients */}
-      <div className="lg:col-span-4 space-y-5">
-        <div className="rounded-[28px] bg-white border border-zinc-200/80 p-6 space-y-4">
+      <div className="space-y-5 lg:col-span-4">
+        <div className="space-y-4 rounded-[12px] border border-[#d3d4c8] bg-[#e9eade] p-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-switzer text-base font-medium text-zinc-950 flex items-center gap-2">
-              <Timer className="h-4 w-4 text-[#C85A32]" />
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#1e1612]">
+              <Timer className="h-4 w-4 text-[#C44D28]" />
               <span>Active Timers ({timers.length})</span>
             </h3>
             {timers.length > 0 && (
               <button
                 type="button"
                 onClick={onPauseAllTimers}
-                className="text-xs text-zinc-500 hover:text-zinc-950"
+                className="text-xs font-medium text-[#4d4c4c] hover:text-[#1e1612]"
               >
                 Pause All
               </button>
@@ -373,7 +423,7 @@ export function HandsFreeCookView({
           </div>
 
           {timers.length === 0 ? (
-            <p className="text-xs text-zinc-400 py-6 text-center border border-dashed border-zinc-200 rounded-2xl">
+            <p className="rounded-[10px] border border-dashed border-[#d3d4c8] bg-[#f1f3e6] py-6 text-center text-xs text-[#4d4c4c]">
               No timers running yet.
             </p>
           ) : (
@@ -389,19 +439,19 @@ export function HandsFreeCookView({
                 return (
                   <div
                     key={t.id}
-                    className="p-4 rounded-2xl bg-[#F6F6F4] border border-zinc-200/80 space-y-2"
+                    className="space-y-2 rounded-[10px] border border-[#d3d4c8] bg-[#f1f3e6] p-4"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-zinc-900">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-[#1e1612]">
                         {t.label}
                       </span>
-                      <span className="font-mono text-base font-bold text-[#C85A32]">
+                      <span className="font-mono text-base font-bold text-[#C44D28] tabular-nums">
                         {formatSeconds(t.remainingSeconds)}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-zinc-200 overflow-hidden">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#d3d4c8]">
                       <div
-                        className="h-full bg-[#C85A32] transition-all duration-300 linear"
+                        className="h-full bg-[#C44D28] transition-all duration-300 ease-linear"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -409,7 +459,7 @@ export function HandsFreeCookView({
                       <button
                         type="button"
                         onClick={() => onToggleTimer(t.id)}
-                        className="px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-xs text-zinc-700 flex items-center gap-1"
+                        className="btn-press flex items-center gap-1 rounded-full border border-[#d3d4c8] bg-[#e9eade] px-2.5 py-1 text-xs font-medium text-[#1e1612]"
                       >
                         {t.isRunning ? (
                           <>
@@ -424,7 +474,7 @@ export function HandsFreeCookView({
                       <button
                         type="button"
                         onClick={() => onDismissTimer(t.id)}
-                        className="px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-1"
+                        className="btn-press flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700"
                       >
                         <Trash2 className="h-3 w-3" /> Clear
                       </button>
@@ -436,13 +486,13 @@ export function HandsFreeCookView({
           )}
         </div>
 
-        {/* Bug Fix #2: Ingredients Reference uses scaled quantities & selected unitSystem */}
-        <div className="rounded-[28px] bg-white border border-zinc-200/80 p-6 space-y-3">
+        {/* Ingredients Reference using scaled quantities & selected unitSystem */}
+        <div className="space-y-3 rounded-[12px] border border-[#d3d4c8] bg-[#e9eade] p-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-switzer text-base font-medium text-zinc-950">
+            <h3 className="text-base font-semibold text-[#1e1612]">
               Ingredients ({currentServings ?? recipe.servings} servings)
             </h3>
-            <span className="text-[11px] font-mono uppercase text-zinc-400">
+            <span className="font-mono text-[11px] font-semibold uppercase text-[#3f6212]">
               {unitSystem}
             </span>
           </div>
@@ -456,17 +506,19 @@ export function HandsFreeCookView({
               return (
                 <li
                   key={i}
-                  className="p-3 rounded-xl bg-[#F6F6F4] border border-zinc-200/70 flex items-center justify-between gap-2"
+                  className="flex items-center justify-between gap-2 rounded-[8px] border border-[#d3d4c8] bg-[#f1f3e6] p-3"
                 >
                   <div>
-                    <span className="font-medium text-zinc-900">{ing.name}</span>
+                    <span className="font-semibold text-[#1e1612]">
+                      {ing.name}
+                    </span>
                     {ing.preparation_note && (
-                      <span className="block text-[11px] text-zinc-500">
+                      <span className="block text-[11px] text-[#4d4c4c]">
                         {ing.preparation_note}
                       </span>
                     )}
                   </div>
-                  <span className="font-mono font-semibold text-[#C85A32] shrink-0">
+                  <span className="shrink-0 font-mono font-bold text-[#3f6212] tabular-nums">
                     {formatted.quantity} {formatted.unit}
                   </span>
                 </li>

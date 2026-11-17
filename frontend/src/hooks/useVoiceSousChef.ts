@@ -8,11 +8,13 @@ import {
   stopSpeaking,
   type SpeechRecognitionInstance,
 } from "@/lib/speech";
-import type { ActiveCookingTimer, Recipe } from "@/types/recipe";
+import type { ActiveCookingTimer, Recipe, UnitSystem } from "@/types/recipe";
 
 interface UseVoiceSousChefOptions {
   recipe: Recipe;
   currentStepIndex: number;
+  unitSystem?: UnitSystem;
+  scaleFactor?: number;
   timers: ActiveCookingTimer[];
   onNextStep: () => void;
   onPrevStep: () => void;
@@ -20,9 +22,16 @@ interface UseVoiceSousChefOptions {
   onPauseTimers: () => void;
 }
 
+function getDefaultGreeting(recipe: Recipe): string {
+  const ingHint = recipe.ingredients[0]?.name.split("(")[0]?.trim() || "spice";
+  return `Ready for ${recipe.title} — ask "How much ${ingHint}?", say "Next step", or "Set a timer".`;
+}
+
 export function useVoiceSousChef({
   recipe,
   currentStepIndex,
+  unitSystem = "indian",
+  scaleFactor = 1,
   timers,
   onNextStep,
   onPrevStep,
@@ -32,13 +41,23 @@ export function useVoiceSousChef({
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastTranscript, setLastTranscript] = useState<string>("");
-  const [assistantMessage, setAssistantMessage] = useState<string>(
-    'Say "Next step", "Start timer", or ask "How much miso do I need?"'
+  const [assistantMessage, setAssistantMessage] = useState<string>(() =>
+    getDefaultGreeting(recipe)
   );
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
+  useEffect(() => {
+    setLastTranscript("");
+    setAssistantMessage(getDefaultGreeting(recipe));
+  }, [recipe]);
+
   const currentStep =
     recipe.timeline_steps[currentStepIndex] ?? recipe.timeline_steps[0];
+
+  const stopSpeakingAloud = useCallback(() => {
+    stopSpeaking();
+    setIsSpeaking(false);
+  }, []);
 
   const handleVoiceCommand = useCallback(
     async (transcript: string) => {
@@ -46,8 +65,8 @@ export function useVoiceSousChef({
       if (!cleaned || !currentStep) return;
 
       setLastTranscript(cleaned);
-      try {
-        const res = await querySousChefVoice({
+      const res = await querySousChefVoice(
+        {
           recipe_title: recipe.title,
           current_step_number: currentStep.step_number,
           current_instruction: currentStep.instruction,
@@ -56,54 +75,37 @@ export function useVoiceSousChef({
           active_timers: timers.map(
             (t) => `${t.label}: ${t.remainingSeconds}s remaining`
           ),
-        });
-
-        setAssistantMessage(res.spoken_reply);
-        if (res.action_command === "NEXT_STEP") {
-          onNextStep();
-        } else if (res.action_command === "PREV_STEP") {
-          onPrevStep();
-        } else if (
-          res.action_command === "START_TIMER" &&
-          res.timer_seconds
-        ) {
-          onStartTimer(
-            res.timer_label ?? `Step ${currentStep.step_number} Timer`,
-            res.timer_seconds,
-            currentStep.step_number
-          );
-        } else if (res.action_command === "PAUSE_TIMERS") {
-          onPauseTimers();
+        },
+        {
+          unitSystem,
+          scaleFactor,
+          stepTitle: currentStep.title,
+          stepDurationSeconds: currentStep.duration_seconds,
+          sensoryCue: currentStep.sensory_cue,
+          equipment: currentStep.equipment,
         }
+      );
 
-        setIsSpeaking(true);
-        speakAloud(res.spoken_reply, () => setIsSpeaking(false));
-      } catch {
-        const lower = cleaned.toLowerCase();
-        if (lower.includes("next")) {
-          onNextStep();
-          const msg = "Advancing to the next step.";
-          setAssistantMessage(msg);
-          speakAloud(msg);
-        } else if (lower.includes("back") || lower.includes("previous")) {
-          onPrevStep();
-          const msg = "Returning to the previous step.";
-          setAssistantMessage(msg);
-          speakAloud(msg);
-        } else if (lower.includes("timer")) {
-          onStartTimer(
-            currentStep.timer_label ?? `Step ${currentStep.step_number}`,
-            currentStep.duration_seconds,
-            currentStep.step_number
-          );
-          const msg = `Started timer for ${Math.round(currentStep.duration_seconds / 60)} minutes.`;
-          setAssistantMessage(msg);
-          speakAloud(msg);
-        } else {
-          setAssistantMessage(currentStep.instruction);
-          speakAloud(currentStep.instruction);
-        }
+      setAssistantMessage(res.spoken_reply);
+      if (res.action_command === "NEXT_STEP") {
+        onNextStep();
+      } else if (res.action_command === "PREV_STEP") {
+        onPrevStep();
+      } else if (
+        res.action_command === "START_TIMER" &&
+        res.timer_seconds
+      ) {
+        onStartTimer(
+          res.timer_label ?? `Step ${currentStep.step_number} Timer`,
+          res.timer_seconds,
+          currentStep.step_number
+        );
+      } else if (res.action_command === "PAUSE_TIMERS") {
+        onPauseTimers();
       }
+
+      setIsSpeaking(true);
+      speakAloud(res.spoken_reply, () => setIsSpeaking(false));
     },
     [
       currentStep,
@@ -113,7 +115,9 @@ export function useVoiceSousChef({
       onStartTimer,
       recipe.ingredients,
       recipe.title,
+      scaleFactor,
       timers,
+      unitSystem,
     ]
   );
 
@@ -124,10 +128,11 @@ export function useVoiceSousChef({
       return;
     }
 
+    stopSpeakingAloud();
     const instance = createSpeechRecognition();
     if (!instance) {
       setAssistantMessage(
-        "Web Speech Recognition is not supported in this browser; use the quick voice command simulator below."
+        "Microphone speech recognition isn't supported in this browser — type below or tap any quick command pill."
       );
       return;
     }
@@ -138,22 +143,37 @@ export function useVoiceSousChef({
         void handleVoiceCommand(latest[0].transcript);
       }
     };
-    instance.onerror = () => {
+    instance.onerror = (ev) => {
       setIsListening(false);
+      if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+        setAssistantMessage(
+          "Microphone access was blocked — allow mic permission or use the Ask Sous Chef input below."
+        );
+      }
     };
     instance.onend = () => {
       setIsListening(false);
     };
 
-    recognitionRef.current = instance;
-    instance.start();
-    setIsListening(true);
-  }, [handleVoiceCommand, isListening]);
+    try {
+      recognitionRef.current = instance;
+      instance.start();
+      setIsListening(true);
+    } catch {
+      setIsListening(false);
+      setAssistantMessage(
+        "Could not start microphone right now — use the quick voice chips or type your question below."
+      );
+    }
+  }, [handleVoiceCommand, isListening, stopSpeakingAloud]);
 
   const readCurrentStepAloud = useCallback(() => {
     if (!currentStep) return;
     setIsSpeaking(true);
-    const text = `Step ${currentStep.step_number}, ${currentStep.title}. ${currentStep.instruction}`;
+    const cueSuffix = currentStep.sensory_cue
+      ? ` What to look for: ${currentStep.sensory_cue}.`
+      : "";
+    const text = `Step ${currentStep.step_number}, ${currentStep.title}. ${currentStep.instruction}${cueSuffix}`;
     setAssistantMessage(text);
     speakAloud(text, () => setIsSpeaking(false));
   }, [currentStep]);
@@ -172,6 +192,7 @@ export function useVoiceSousChef({
     assistantMessage,
     toggleListening,
     readCurrentStepAloud,
+    stopSpeakingAloud,
     simulateVoiceCommand: handleVoiceCommand,
   };
 }

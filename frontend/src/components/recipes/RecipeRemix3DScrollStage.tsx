@@ -27,7 +27,11 @@ import { SlidingNumber } from "@/components/core/sliding-number";
 import { IngredientList } from "@/components/recipes/IngredientList";
 import { ParallelTimeline } from "@/components/recipes/ParallelTimeline";
 import { ProceduralDishThreeCanvas } from "@/components/recipes/ProceduralDishThreeCanvas";
-import { getRecipe3DImage, getRecipeArchetype } from "@/lib/api";
+import {
+  ARCHETYPE_3D_IMAGE,
+  getRecipe3DImage,
+  getRecipeArchetype,
+} from "@/lib/api";
 import type {
   NormalizedIngredient,
   Recipe,
@@ -158,6 +162,9 @@ export function RecipeRemix3DScrollStage({
   const wheelCooldownRef = useRef<number>(0);
   const touchStartXRef = useRef<number | null>(null);
   const [view3DMode, setView3DMode] = useState<"render" | "model">("render");
+  const [failedImgUrls, setFailedImgUrls] = useState<Record<string, boolean>>(
+    {}
+  );
   const [pointerTilt, setPointerTilt] = useState<{ rx: number; ry: number }>({
     rx: 0,
     ry: 0,
@@ -427,8 +434,16 @@ export function RecipeRemix3DScrollStage({
             const isVisible = Math.abs(offset) <= 2;
             if (!isVisible) return null;
 
-            const imgSrc = getRecipe3DImage(recipe);
-            const isCustomPhoto = imgSrc.startsWith("data:image/");
+            const rawImgSrc = getRecipe3DImage(recipe);
+            const fallbackImgSrc =
+              /(mutton|lamb|goat|kulambu|kuzhambu|chettinad|rogan josh|keema)/i.test(
+                `${recipe.title} ${recipe.cuisine}`
+              )
+                ? "/recipes/mutton-kulambu-3d.jpg"
+                : ARCHETYPE_3D_IMAGE[getRecipeArchetype(recipe)];
+            const imgSrc = failedImgUrls[rawImgSrc] ? fallbackImgSrc : rawImgSrc;
+            const isCustomPhoto =
+              imgSrc.startsWith("data:image/") || /^https?:\/\//i.test(imgSrc);
 
             const targetX =
               offset === 0
@@ -501,7 +516,9 @@ export function RecipeRemix3DScrollStage({
                       archetype={activeArchetype}
                       title={selectedRecipe.title}
                       customPhotoDataUrl={
-                        selectedRecipe.hero_image_url?.startsWith("data:image/")
+                        selectedRecipe.hero_image_url &&
+                        (selectedRecipe.hero_image_url.startsWith("data:image/") ||
+                          /^https?:\/\//i.test(selectedRecipe.hero_image_url))
                           ? selectedRecipe.hero_image_url
                           : null
                       }
@@ -526,6 +543,12 @@ export function RecipeRemix3DScrollStage({
                           src={imgSrc}
                           alt={recipe.title}
                           draggable={false}
+                          onError={() =>
+                            setFailedImgUrls((prev) => ({
+                              ...prev,
+                              [rawImgSrc]: true,
+                            }))
+                          }
                           className="h-full w-full object-cover select-none"
                         />
                       </div>

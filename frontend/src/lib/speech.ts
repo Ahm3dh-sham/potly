@@ -53,10 +53,20 @@ export function speakAloud(text: string, onEnd?: () => void): void {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 1.02;
   utterance.pitch = 1.0;
-  if (onEnd) {
-    utterance.onend = () => onEnd();
+  let settled = false;
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    onEnd?.();
+  };
+  utterance.onend = finish;
+  utterance.onerror = finish;
+  window.setTimeout(finish, Math.max(4000, text.length * 95));
+  try {
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    finish();
   }
-  window.speechSynthesis.speak(utterance);
 }
 
 export function stopSpeaking(): void {
