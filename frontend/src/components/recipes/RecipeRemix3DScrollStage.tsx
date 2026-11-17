@@ -24,6 +24,18 @@ import {
   Users,
 } from "lucide-react";
 import { SlidingNumber } from "@/components/core/sliding-number";
+import {
+  MorphingDialog,
+  MorphingDialogClose,
+  MorphingDialogContainer,
+  MorphingDialogContent,
+  MorphingDialogImage,
+  MorphingDialogSubtitle,
+  MorphingDialogTitle,
+  MorphingDialogTrigger,
+  useMorphingDialog,
+} from "@/components/core/morphing-dialog";
+import { ScrollArea } from "@/components/website/scroll-area";
 import { IngredientList } from "@/components/recipes/IngredientList";
 import { ParallelTimeline } from "@/components/recipes/ParallelTimeline";
 import { ProceduralDishThreeCanvas } from "@/components/recipes/ProceduralDishThreeCanvas";
@@ -129,6 +141,23 @@ const UNIT_SYSTEM_LABEL: Record<UnitSystem, string> = {
   imperial: "US Cups & Oz",
 };
 
+function resolveDishImage(
+  recipe: Recipe,
+  failedMap: Record<string, boolean>
+): { rawImgSrc: string; imgSrc: string } {
+  const rawImgSrc = getRecipe3DImage(recipe);
+  const fallback =
+    /(mutton|lamb|goat|kulambu|kuzhambu|chettinad|rogan josh|keema)/i.test(
+      `${recipe.title} ${recipe.cuisine}`
+    )
+      ? "/recipes/mutton-kulambu-3d.jpg"
+      : ARCHETYPE_3D_IMAGE[getRecipeArchetype(recipe)];
+  return {
+    rawImgSrc,
+    imgSrc: failedMap[rawImgSrc] ? fallback : rawImgSrc,
+  };
+}
+
 function computeCircularOffset(
   index: number,
   activeIndex: number,
@@ -138,6 +167,141 @@ function computeCircularOffset(
   let diff = (index - activeIndex + total) % total;
   if (diff > total / 2) diff -= total;
   return diff;
+}
+
+function DishDialogModalActions({
+  recipe,
+  onSelectRecipe,
+  onStartCooking,
+}: {
+  recipe: Recipe;
+  onSelectRecipe: (recipe: Recipe) => void;
+  onStartCooking: (recipe: Recipe) => void;
+}) {
+  const { setIsOpen } = useMorphingDialog();
+  return (
+    <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[#d3d4c8] pt-4">
+      <button
+        type="button"
+        onClick={() => {
+          onSelectRecipe(recipe);
+          setIsOpen(false);
+        }}
+        className="btn-press rounded-full border border-[#d3d4c8] bg-[#e9eade] px-4 py-2 text-xs font-semibold text-[#1e1612] hover:border-[#3f6212]"
+      >
+        Focus in 3D Stage
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setIsOpen(false);
+          onStartCooking(recipe);
+        }}
+        className="btn-press inline-flex items-center gap-1.5 rounded-full bg-[#3f6212] px-4 py-2 text-xs font-semibold text-[#fcfcfd] hover:bg-[#33500e]"
+      >
+        <Mic className="h-3.5 w-3.5" />
+        <span>Cook Hands-Free</span>
+      </button>
+    </div>
+  );
+}
+
+function DishMorphingModalBody({
+  recipe,
+  imgSrc,
+  onImageError,
+  onSelectRecipe,
+  onStartCooking,
+}: {
+  recipe: Recipe;
+  imgSrc: string;
+  onImageError: () => void;
+  onSelectRecipe: (recipe: Recipe) => void;
+  onStartCooking: (recipe: Recipe) => void;
+}) {
+  const totalMin = recipe.prep_time_minutes + recipe.cook_time_minutes;
+  return (
+    <MorphingDialogContent
+      style={{
+        borderRadius: "12px",
+      }}
+      className="relative h-auto w-[500px] max-w-[92vw] border border-[#d3d4c8] bg-[#f1f3e6] shadow-2xl"
+    >
+      <ScrollArea className="h-[85vh]" type="scroll">
+        <div className="relative p-6">
+          <div className="flex justify-center py-6">
+            <MorphingDialogImage
+              src={imgSrc}
+              alt={recipe.title}
+              onError={onImageError}
+              className="h-auto w-[220px] rounded-[8px] object-cover shadow-[0_14px_24px_rgba(30,22,18,0.14)]"
+            />
+          </div>
+          <div>
+            <MorphingDialogTitle className="text-xl font-semibold tracking-tight text-[#1e1612]">
+              {recipe.title}
+            </MorphingDialogTitle>
+            <MorphingDialogSubtitle className="mt-1 text-xs font-medium text-[#4d4c4c]">
+              {recipe.cuisine} • {totalMin}m • {recipe.servings} servings • ₹
+              {Math.round(recipe.estimated_total_cost_inr)}
+            </MorphingDialogSubtitle>
+            <div className="mt-4 space-y-4 text-sm text-[#333333]">
+              <p className="leading-relaxed">{recipe.description}</p>
+
+              <div className="rounded-[10px] border border-[#d3d4c8] bg-[#e9eade] p-3.5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#3f6212]">
+                  Ingredients ({recipe.ingredients.length})
+                </p>
+                <ul className="space-y-1.5 text-xs">
+                  {recipe.ingredients.map((ing, i) => (
+                    <li
+                      key={i}
+                      className="flex items-baseline justify-between gap-2 border-b border-[#d3d4c8]/60 pb-1 last:border-none last:pb-0"
+                    >
+                      <span className="font-medium text-[#1e1612]">
+                        {ing.name}
+                      </span>
+                      <span className="shrink-0 font-mono font-semibold text-[#3f6212]">
+                        {ing.quantity} {ing.unit}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#3f6212]">
+                  Parallel Prep &amp; Cooking Steps ({recipe.timeline_steps.length})
+                </p>
+                <ol className="space-y-2 text-xs">
+                  {recipe.timeline_steps.map((st) => (
+                    <li
+                      key={st.step_number}
+                      className="rounded-[8px] border border-[#d3d4c8] bg-[#e9eade]/70 p-3"
+                    >
+                      <p className="font-semibold text-[#1e1612]">
+                        {st.step_number}. {st.title}
+                      </p>
+                      <p className="mt-1 leading-relaxed text-[#4d4c4c]">
+                        {st.instruction}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+
+            <DishDialogModalActions
+              recipe={recipe}
+              onSelectRecipe={onSelectRecipe}
+              onStartCooking={onStartCooking}
+            />
+          </div>
+        </div>
+      </ScrollArea>
+      <MorphingDialogClose />
+    </MorphingDialogContent>
+  );
 }
 
 export function RecipeRemix3DScrollStage({
@@ -434,14 +598,10 @@ export function RecipeRemix3DScrollStage({
             const isVisible = Math.abs(offset) <= 2;
             if (!isVisible) return null;
 
-            const rawImgSrc = getRecipe3DImage(recipe);
-            const fallbackImgSrc =
-              /(mutton|lamb|goat|kulambu|kuzhambu|chettinad|rogan josh|keema)/i.test(
-                `${recipe.title} ${recipe.cuisine}`
-              )
-                ? "/recipes/mutton-kulambu-3d.jpg"
-                : ARCHETYPE_3D_IMAGE[getRecipeArchetype(recipe)];
-            const imgSrc = failedImgUrls[rawImgSrc] ? fallbackImgSrc : rawImgSrc;
+            const { rawImgSrc, imgSrc } = resolveDishImage(
+              recipe,
+              failedImgUrls
+            );
             const isCustomPhoto =
               imgSrc.startsWith("data:image/") || /^https?:\/\//i.test(imgSrc);
 
@@ -537,7 +697,65 @@ export function RecipeRemix3DScrollStage({
                     transition={{ type: "spring", stiffness: 260, damping: 24 }}
                     className="relative flex h-[215px] w-[215px] items-center justify-center sm:h-[276px] sm:w-[276px]"
                   >
-                    {isCustomPhoto ? (
+                    {isCenter ? (
+                      <MorphingDialog
+                        transition={{
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 24,
+                        }}
+                      >
+                        <MorphingDialogTrigger
+                          style={{ borderRadius: "12px" }}
+                          className="group relative flex h-full w-full items-center justify-center focus:outline-none"
+                        >
+                          {isCustomPhoto ? (
+                            <div className="relative h-[196px] w-[196px] overflow-hidden rounded-full border-4 border-[#e9eade] bg-[#f1f3e6] shadow-[0_24px_30px_rgba(30,22,18,0.22)] ring-2 ring-[#C44D28]/40 transition-transform duration-300 group-hover:scale-[1.03] sm:h-[246px] sm:w-[246px]">
+                              <MorphingDialogImage
+                                src={imgSrc}
+                                alt={recipe.title}
+                                onError={() =>
+                                  setFailedImgUrls((prev) => ({
+                                    ...prev,
+                                    [rawImgSrc]: true,
+                                  }))
+                                }
+                                className="h-full w-full object-cover select-none"
+                              />
+                            </div>
+                          ) : (
+                            <MorphingDialogImage
+                              src={imgSrc}
+                              alt={recipe.title}
+                              className="h-full w-full object-contain drop-shadow-[0_24px_26px_rgba(30,22,18,0.18)] transition-transform duration-300 group-hover:scale-[1.03] select-none"
+                              style={{
+                                WebkitMaskImage:
+                                  "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
+                                maskImage:
+                                  "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
+                              }}
+                            />
+                          )}
+                          <span className="sr-only">
+                            Inspect {recipe.title} image &amp; recipe details
+                          </span>
+                        </MorphingDialogTrigger>
+                        <MorphingDialogContainer>
+                          <DishMorphingModalBody
+                            recipe={recipe}
+                            imgSrc={imgSrc}
+                            onImageError={() =>
+                              setFailedImgUrls((prev) => ({
+                                ...prev,
+                                [rawImgSrc]: true,
+                              }))
+                            }
+                            onSelectRecipe={onSelectRecipe}
+                            onStartCooking={onStartCooking}
+                          />
+                        </MorphingDialogContainer>
+                      </MorphingDialog>
+                    ) : isCustomPhoto ? (
                       <div className="relative h-[196px] w-[196px] overflow-hidden rounded-full border-4 border-[#e9eade] bg-[#f1f3e6] shadow-[0_24px_30px_rgba(30,22,18,0.22)] ring-2 ring-[#C44D28]/40 sm:h-[246px] sm:w-[246px]">
                         <img
                           src={imgSrc}
@@ -557,11 +775,7 @@ export function RecipeRemix3DScrollStage({
                         src={imgSrc}
                         alt={recipe.title}
                         draggable={false}
-                        className={`h-full w-full object-contain transition-transform duration-300 select-none ${
-                          isCenter
-                            ? "drop-shadow-[0_24px_26px_rgba(30,22,18,0.18)]"
-                            : "hover:scale-[1.03] drop-shadow-[0_14px_16px_rgba(30,22,18,0.10)]"
-                        }`}
+                        className="h-full w-full object-contain drop-shadow-[0_14px_16px_rgba(30,22,18,0.10)] transition-transform duration-300 hover:scale-[1.03] select-none"
                         style={{
                           WebkitMaskImage:
                             "radial-gradient(circle at 50% 49%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.88) 74%, rgba(0,0,0,0) 97%)",
@@ -779,6 +993,74 @@ export function RecipeRemix3DScrollStage({
               <Mic className="h-3.5 w-3.5" />
               <span>Cook Hands-Free</span>
             </button>
+          </div>
+
+          {/* Dish Image MorphingDialog Gallery Strip */}
+          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 text-left">
+            {safeRecipes.map((r) => {
+              const { rawImgSrc: rRawImg, imgSrc: rImgSrc } = resolveDishImage(
+                r,
+                failedImgUrls
+              );
+              const isSelectedCard = r.id === selectedRecipe.id;
+
+              return (
+                <MorphingDialog
+                  key={`morph-${r.id}`}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 24,
+                  }}
+                >
+                  <MorphingDialogTrigger
+                    style={{ borderRadius: "6px" }}
+                    className={`border transition-colors ${
+                      isSelectedCard
+                        ? "border-[#3f6212] bg-[#e9eade]"
+                        : "border-[#d3d4c8] bg-[#f1f3e6] hover:border-[#3f6212]/70"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 p-2.5">
+                      <MorphingDialogImage
+                        src={rImgSrc}
+                        alt={r.title}
+                        onError={() =>
+                          setFailedImgUrls((prev) => ({
+                            ...prev,
+                            [rRawImg]: true,
+                          }))
+                        }
+                        className="h-9 w-9 shrink-0 object-cover object-center"
+                        style={{ borderRadius: "4px" }}
+                      />
+                      <div className="flex min-w-0 flex-col items-start justify-center space-y-0">
+                        <MorphingDialogTitle className="line-clamp-1 text-[11px] font-semibold text-[#1e1612] sm:text-xs">
+                          {r.title}
+                        </MorphingDialogTitle>
+                        <MorphingDialogSubtitle className="line-clamp-1 text-[10px] text-[#4d4c4c] sm:text-[11px]">
+                          {r.cuisine} • ₹{Math.round(r.estimated_total_cost_inr)}
+                        </MorphingDialogSubtitle>
+                      </div>
+                    </div>
+                  </MorphingDialogTrigger>
+                  <MorphingDialogContainer>
+                    <DishMorphingModalBody
+                      recipe={r}
+                      imgSrc={rImgSrc}
+                      onImageError={() =>
+                        setFailedImgUrls((prev) => ({
+                          ...prev,
+                          [rRawImg]: true,
+                        }))
+                      }
+                      onSelectRecipe={onSelectRecipe}
+                      onStartCooking={onStartCooking}
+                    />
+                  </MorphingDialogContainer>
+                </MorphingDialog>
+              );
+            })}
           </div>
         </motion.div>
 
