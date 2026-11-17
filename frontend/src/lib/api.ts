@@ -84,6 +84,9 @@ export function getRecipeArchetype(recipe: Recipe): DishArchetype {
     if (byParent) return byParent;
   }
   const text = `${recipe.title} ${recipe.cuisine} ${(recipe.tags ?? []).join(" ")}`.toLowerCase();
+  if (/(paneer|kadhai|makhani)/i.test(text)) {
+    return "kadhai";
+  }
   if (/(dosa|idli|sambar|tiffin|south|uttapam|vada)/i.test(text)) {
     return "dosa";
   }

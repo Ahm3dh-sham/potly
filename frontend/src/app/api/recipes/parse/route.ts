@@ -370,6 +370,9 @@ function defaultStepsForDish(
 
 function inferHeroImageUrl(title: string, cuisine = ""): string {
   const lower = `${title} ${cuisine}`.toLowerCase();
+  if (/(paneer|kadhai|makhani)/i.test(lower)) {
+    return "/recipes/paneer-tikka-3d.jpg";
+  }
   if (/(dosa|idli|sambar|tiffin|south|uttapam|vada)/i.test(lower)) {
     return "/recipes/mysore-masala-dosa-3d.jpg";
   }
